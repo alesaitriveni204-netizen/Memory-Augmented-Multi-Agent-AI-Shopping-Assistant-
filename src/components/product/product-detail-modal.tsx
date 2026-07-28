@@ -4,7 +4,7 @@ import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Star, Check, AlertCircle, ShoppingCart,
-  ExternalLink, Heart, GitCompare, Truck, Shield, Package, Loader2, BarChart3,
+  ExternalLink, Heart, GitCompare, Truck, Shield, Package, Loader2, BarChart3, Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -387,11 +387,108 @@ export function ProductDetailModal() {
                     </div>
                   </div>
                 )}
+
+                {/* Similar Products */}
+                <SimilarProducts productId={product.id} category={product.category} onOpen={(id) => { setProduct(null); setLoading(true); useAppStore.getState().openProductDetail(id) }} />
               </div>
             </ScrollArea>
           )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+// ─── Similar Products sub-component ─────────────────────────────────────────
+function SimilarProducts({
+  productId,
+  category,
+  onOpen,
+}: {
+  productId: string
+  category: string
+  onOpen: (id: string) => void
+}) {
+  const [similar, setSimilar] = React.useState<any[]>([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/products?category=${category}&limit=6`)
+        const data = await res.json()
+        if (!cancelled && res.ok) {
+          // Exclude the current product
+          setSimilar((data.products || []).filter((p: any) => p.id !== productId).slice(0, 4))
+        }
+      } catch {
+        /* swallow */
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [productId, category])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3 text-emerald-500" /> Similar Products
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-lg asos-shimmer" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (similar.length === 0) return null
+
+  return (
+    <div>
+      <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+        <Sparkles className="h-3 w-3 text-emerald-500" /> Similar Products
+        <Badge variant="outline" className="text-[9px] ml-1">{similar.length}</Badge>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {similar.map((p, i) => {
+          const best = p.platformPrices?.length > 0
+            ? p.platformPrices.reduce((min: any, pp: any) => (pp.price < min.price ? pp : min), p.platformPrices[0])
+            : null
+          return (
+            <motion.button
+              key={p.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              onClick={() => onOpen(p.id)}
+              className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 p-2 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all text-left group"
+            >
+              <div
+                className="h-10 w-10 shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                style={{ background: `linear-gradient(135deg, ${p.imageColor}, ${p.imageColor}cc)` }}
+              >
+                {p.brand.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-medium truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  {p.name}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {best ? formatINR(best.price) : formatINR(p.basePrice)} · {p.rating}★
+                </div>
+              </div>
+            </motion.button>
+          )
+        })}
+      </div>
+    </div>
   )
 }

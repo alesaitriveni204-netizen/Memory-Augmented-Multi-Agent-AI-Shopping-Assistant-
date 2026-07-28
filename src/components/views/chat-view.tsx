@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Send, ArrowDown, Mic, Square, Loader2 } from 'lucide-react'
+import { Sparkles, Send, ArrowDown, Mic, Square, Loader2, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RecommendationCard } from '@/components/chat/recommendation-card'
 import { WebSearchPanel } from '@/components/chat/web-search-panel'
@@ -80,8 +80,23 @@ export function ChatView() {
   const setPendingInput = useAppStore((s) => s.setPendingInput)
 
   const [input, setInput] = React.useState('')
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [showSearch, setShowSearch] = React.useState(false)
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = React.useState(false)
+
+  // Filter messages by search query
+  const filteredMessages = React.useMemo(() => {
+    if (!searchQuery.trim()) return messages
+    const q = searchQuery.toLowerCase()
+    return messages.filter(
+      (m) =>
+        m.content.toLowerCase().includes(q) ||
+        m.metadata?.recommendations?.some(
+          (r) => r.name.toLowerCase().includes(q) || r.brand.toLowerCase().includes(q),
+        ),
+    )
+  }, [messages, searchQuery])
 
   const voice = useVoiceInput((text) => {
     setInput((prev) => (prev ? prev + ' ' + text : text))
@@ -188,6 +203,44 @@ export function ChatView() {
   return (
     <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
       <div className="flex min-h-0 flex-col">
+        {/* Chat search bar */}
+        {messages.length > 0 && (
+          <div className="flex items-center gap-2 pb-2">
+            <button
+              onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery('') }}
+              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors ${showSearch ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'border-border/60 text-muted-foreground hover:bg-muted'}`}
+            >
+              <Search className="h-3 w-3" /> Search
+            </button>
+            {showSearch && (
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search messages, products, brands…"
+                  className="w-full rounded-lg border border-border/60 bg-card/60 pl-7 pr-3 py-1 text-xs outline-none focus:border-emerald-500/50"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+            {searchQuery && (
+              <span className="text-[10px] text-muted-foreground shrink-0">
+                {filteredMessages.length} / {messages.length}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Messages */}
         <div
           className="relative flex-1 min-h-0"
@@ -259,7 +312,7 @@ export function ChatView() {
 
             <div className="space-y-4 pb-4">
               <AnimatePresence initial={false}>
-                {messages.map((m, idx) => {
+                {filteredMessages.map((m, idx) => {
                   // Find the most recent user message before this assistant message
                   let userQuery: string | undefined
                   if (m.role === 'assistant' && m.metadata?.recommendations?.length) {

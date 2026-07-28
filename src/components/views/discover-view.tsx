@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, Star, Sparkles, GitCompare } from 'lucide-react'
+import { Search, Star, Sparkles, GitCompare, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +39,10 @@ export function DiscoverView() {
   const [search, setSearch] = React.useState('')
   const [category, setCategory] = React.useState<string>('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
+  const [showFilters, setShowFilters] = React.useState(false)
+  const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 250000])
+  const [minRating, setMinRating] = React.useState(0)
+  const [selectedBrands, setSelectedBrands] = React.useState<string[]>([])
   const setActiveView = useAppStore((s) => s.setActiveView)
   const setPendingChatInput = useAppStore((s) => s.setPendingChatInput)
   const addToCompare = useAppStore((s) => s.addToCompare)
@@ -57,11 +61,46 @@ export function DiscoverView() {
       const params = new URLSearchParams()
       if (category) params.set('category', category)
       if (debouncedSearch) params.set('search', debouncedSearch)
-      params.set('limit', '24')
+      params.set('limit', '60')
       const res = await fetch(`/api/products?${params}`)
       return res.json()
     },
   })
+
+  // Extract available brands from products
+  const availableBrands = React.useMemo(() => {
+    const brands = new Set<string>()
+    ;(data?.products || []).forEach((p) => brands.add(p.brand))
+    return Array.from(brands).sort()
+  }, [data])
+
+  // Apply client-side filters (price, rating, brand)
+  const filteredProducts = React.useMemo(() => {
+    let result = data?.products || []
+    if (priceRange[0] > 0 || priceRange[1] < 250000) {
+      result = result.filter((p) => {
+        const best = p.platformPrices?.length > 0
+          ? Math.min(...p.platformPrices.filter((pp) => pp.inStock).map((pp) => pp.price))
+          : p.basePrice
+        return best >= priceRange[0] && best <= priceRange[1]
+      })
+    }
+    if (minRating > 0) {
+      result = result.filter((p) => p.rating >= minRating)
+    }
+    if (selectedBrands.length > 0) {
+      result = result.filter((p) => selectedBrands.includes(p.brand))
+    }
+    return result
+  }, [data, priceRange, minRating, selectedBrands])
+
+  const activeFilterCount = (priceRange[0] > 0 || priceRange[1] < 250000 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (selectedBrands.length > 0 ? 1 : 0)
+
+  function clearFilters() {
+    setPriceRange([0, 250000])
+    setMinRating(0)
+    setSelectedBrands([])
+  }
 
   function askAbout(p: ApiProduct) {
     setPendingChatInput(
@@ -70,7 +109,7 @@ export function DiscoverView() {
     setActiveView('chat')
   }
 
-  const products = data?.products || []
+  const products = filteredProducts
 
   return (
     <div className="space-y-4">
@@ -121,6 +160,133 @@ export function DiscoverView() {
             </button>
           ))}
         </div>
+
+        {/* Advanced filters toggle + panel */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors',
+              showFilters || activeFilterCount > 0
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-border/60 hover:bg-muted text-muted-foreground',
+            )}
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="text-[11px] text-muted-foreground hover:text-rose-500 transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+          <span className="text-[11px] text-muted-foreground ml-auto">
+            {products.length} product{products.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-4 overflow-hidden"
+          >
+            {/* Price range */}
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Price Range
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={250000}
+                  step={5000}
+                  value={priceRange[0]}
+                  onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                  className="flex-1 accent-emerald-500"
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={250000}
+                  step={5000}
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                  className="flex-1 accent-emerald-500"
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1">
+                <span>₹{priceRange[0].toLocaleString('en-IN')}</span>
+                <span>₹{priceRange[1].toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            {/* Rating filter */}
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Minimum Rating
+              </div>
+              <div className="flex gap-1.5">
+                {[0, 3, 3.5, 4, 4.5].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setMinRating(r)}
+                    className={cn(
+                      'rounded-md border px-2.5 py-1 text-xs transition-colors',
+                      minRating === r
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium'
+                        : 'border-border/60 hover:bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {r === 0 ? 'Any' : `${r}★+`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Brand multi-select */}
+            {availableBrands.length > 0 && (
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Brands ({selectedBrands.length > 0 ? `${selectedBrands.length} selected` : 'all'})
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto scrollbar-thin">
+                  {availableBrands.map((b) => {
+                    const active = selectedBrands.includes(b)
+                    return (
+                      <button
+                        key={b}
+                        onClick={() => {
+                          setSelectedBrands((prev) =>
+                            active ? prev.filter((x) => x !== b) : [...prev, b],
+                          )
+                        }}
+                        className={cn(
+                          'rounded-md border px-2 py-0.5 text-[11px] transition-colors',
+                          active
+                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium'
+                            : 'border-border/60 hover:bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {b}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
 
       {isLoading ? (
