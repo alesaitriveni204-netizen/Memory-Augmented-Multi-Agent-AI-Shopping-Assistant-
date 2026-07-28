@@ -27,6 +27,7 @@ import { ProductVisual } from '@/components/common/product-visual'
 import { ScoreRing } from '@/components/common/score-ring'
 import { ScoreBars } from '@/components/common/score-bars'
 import { Sparkline } from '@/components/common/sparkline'
+import { BuyWaitAdvice } from '@/components/chat/buy-wait-advice'
 import { usePriceHistory } from '@/hooks/use-price-history'
 import {
   formatINR,
@@ -389,6 +390,21 @@ export function RecommendationCard({
                         </div>
                       </div>
                     )}
+                    {/* AI Buy/Wait Advice */}
+                    <div className="mt-2">
+                      <BuyWaitAdvice
+                        product={{
+                          name: rec.name,
+                          brand: rec.brand,
+                          bestPrice: rec.bestPrice,
+                          mrp: rec.mrp,
+                          discount: rec.discount,
+                          rating: rec.rating,
+                        }}
+                        priceAdvice={rec.priceAdvice as any}
+                        priceHistory={priceSeries}
+                      />
+                    </div>
                   </div>
                 </>
               )}

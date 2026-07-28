@@ -354,3 +354,69 @@ App stable from round 1. 9 views (Chat, Discover, Wishlist, Memory, Digital Twin
 6. **More products**: Expand catalog from 30 to 60+ products
 7. **Conversation memory timeline**: Visualize how twin evolved over time in Digital Twin view
 8. **Smart bundle recommendations**: "People who bought this also bought" feature
+
+---
+Task ID: 10 (cron webDevReview round 3)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Web search + Buy/Wait prediction + Twin evolution timeline + styling polish
+
+## Current Project Status Assessment
+App stable from round 2. 9 views, 11 agents, MARE/AHDE/DPT working. Demo user: Student Shopper, twin confidence 35%. Round 2 added: AI Verdict in compare modal, price sparklines, LLM coach tips, AnimatedNumber, chart tooltips. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat (recommendation query), all views via agent-browser
+- Verified: 8 agents activated for recommendation, twin confidence grew to 36%
+- No bugs found — app stable
+
+### New Feature 1: Web Search Integration (Web Intelligence panel)
+- **Backend**: Created `src/app/api/web-search/route.ts` — uses z-ai-web-dev-sdk `functions.invoke('web_search', {query, num, recency_days})` to fetch real-time web results
+- **Frontend**: Created `src/components/chat/web-search-panel.tsx` — collapsible panel showing live web results with favicon, host_name, date, title, snippet, external link
+- Integrated into chat view: appears below recommendation cards, fetches web results for the user's query (with "review price 2025" suffix, recency_days=90)
+- Added "4 live" badge, loading spinner, expand/collapse
+- Verified: returned real results from tomshardware.com, reddit.com, pcmag.com for "Best gaming laptop 2025"
+
+### New Feature 2: "Should I buy now or wait?" Price Prediction
+- **Backend**: Created `src/app/api/price-prediction/route.ts` — LLM-powered agent that analyzes price history + trend + avg/low/high to generate buy/wait/neutral recommendation with confidence, reasoning, predictedDiscount, bestTimeToBuy, tip
+- **Frontend**: Created `src/components/chat/buy-wait-advice.tsx` — color-coded advice box (emerald=BUY, amber=WAIT, sky=NEUTRAL) with confidence badge, reasoning, best time, predicted discount, tip
+- Added to recommendation card's Price Intelligence section (below sparkline)
+- Verified: LLM returned "WAIT" with 75% confidence, "Current price ₹66,900 is above 8-week average", "Wait 2-3 weeks for sale", "5-10% off", "Monitor flash sales for better deals"
+
+### New Feature 3: Twin Evolution Timeline Visualization
+- **Backend**: Created `src/app/api/digital-twin/evolution/route.ts` — reconstructs twin confidence + memory count over time from timeline events + memories, returns evolution points, chart data, type counts
+- **Frontend**: Created `src/components/digital-twin/twin-evolution-chart.tsx` — rich visualization with:
+  - Area chart (Recharts) showing twin confidence (emerald) + memory count (purple) growth over time
+  - Event type distribution chips (onboarding, recommendation, twin_update, etc.) with icons + colors
+  - Recent events list with confidence/memory snapshots per event
+- Replaced the old simple Evolution History list in digital-twin-view
+- VLM verified: "Area/line graph tracking Twin Confidence (green, rising) and Memory Count (purple), event chips: onboarding (1), recommendation (21), wishlist (2), twin update (2), activity log with timestamps"
+
+### Styling Polish
+- **Chat empty state**: Enhanced with animated gradient hero (blur backdrop), gradient text title, agent badges (Intent, Search, Memory, Digital Twin, MARE, Price, Explainability with pulsing dots), 2-column quick suggestion cards with icons + hover lift
+- **Footer**: Richer design with gradient background (emerald→teal), pulsing green dot, responsive text (full on desktop, abbreviated on mobile), emerald "Personalization Active" status
+- VLM confirmed header logo visible
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200), no runtime errors
+- Web search: returned real results from tomshardware, reddit, pcmag
+- Buy/Wait advice: LLM returned WAIT 75% with reasoning + tip
+- Twin evolution: VLM verified chart + event chips + activity log
+- All features work end-to-end
+
+## Unresolved Issues / Risks
+- Web search adds ~2-3s latency per chat response (acceptable, runs in parallel with recommendations)
+- Buy/Wait advice adds ~1-2s latency per card expand (acceptable)
+- Twin evolution chart shows all events on same day (demo user created today) — will show meaningful time spread with real long-term usage
+- VLM sometimes can't see below-the-fold content in screenshots (features verified via accessibility tree + DOM checks)
+
+## Priority Recommendations for Next Phase
+1. **Image-based product search**: Use VLM skill to let users upload a product image and find visually similar products
+2. **Smart bundle recommendations**: "People who bought this also bought" / "Complete your setup" feature
+3. **Spending tracker**: Add monthly spending visualization to Insights based on "purchased" recommendations
+4. **Export insights to PDF**: Use pdf skill to generate downloadable shopping intelligence report
+5. **More products**: Expand catalog from 30 to 60+ products
+6. **Conversation memory**: Let the chat remember context within a session (e.g., "compare it with X" refers to previous product)
+7. **Price alert email/notification**: Real-time push when wishlist target hit (currently generates DB notification only)
+8. **Onboarding enhancement**: Add a "skip onboarding" option + personality quiz mode

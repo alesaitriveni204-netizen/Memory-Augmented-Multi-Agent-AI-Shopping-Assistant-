@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ScoreRing } from '@/components/common/score-ring'
 import { EmptyState, LoadingState } from '@/components/common/empty-state'
+import { TwinEvolutionChart } from '@/components/digital-twin/twin-evolution-chart'
 import {
   platformColor,
   platformLabel,
@@ -408,39 +409,8 @@ export function DigitalTwinView() {
         </div>
       </div>
 
-      {/* Evolution History */}
-      <div className="rounded-xl border border-border/60 bg-card p-4">
-        <div className="text-sm font-semibold mb-3">Evolution History</div>
-        {data.history?.length === 0 ? (
-          <div className="text-xs text-muted-foreground py-4 text-center">
-            No twin updates yet. Interact with the app to evolve your twin.
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-thin pr-1">
-            {data.history.slice(0, 20).map((h) => (
-              <div
-                key={h.id}
-                className="flex items-start gap-2 rounded-md border border-border/40 p-2 text-xs"
-              >
-                <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  🔄
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium">{h.title}</div>
-                  {h.description && (
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {h.description}
-                    </div>
-                  )}
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {relativeTime(h.createdAt)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Twin Evolution Timeline — replaces the old simple history list */}
+      <TwinEvolutionChart />
     </div>
   )
 }

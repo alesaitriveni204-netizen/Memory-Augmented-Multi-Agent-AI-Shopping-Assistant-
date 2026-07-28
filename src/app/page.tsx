@@ -203,13 +203,22 @@ export default function Home() {
       <CompareModal />
 
       <footer
-        className="mt-auto border-t border-border/60 bg-background/80 px-4 py-2 text-center text-[10px] text-muted-foreground"
+        className="mt-auto border-t border-border/60 bg-gradient-to-r from-emerald-500/5 via-transparent to-teal-500/5 px-4 py-2.5 flex items-center justify-center gap-2 text-[10px] text-muted-foreground"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)' }}
       >
-        AI Shopping OS · Cross-Platform Shopping Intelligence ·{' '}
-        {booted
-          ? (user?.hasOnboarded ? 'Personalization Active' : 'Onboarding')
-          : 'Booting…'}
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          AI Shopping OS
+        </span>
+        <span className="text-border">·</span>
+        <span className="hidden sm:inline">Cross-Platform Shopping Intelligence</span>
+        <span className="sm:hidden">Shopping Intelligence</span>
+        <span className="text-border">·</span>
+        <span className={`font-medium ${user?.hasOnboarded ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
+          {booted
+            ? (user?.hasOnboarded ? 'Personalization Active' : 'Onboarding')
+            : 'Booting…'}
+        </span>
       </footer>
     </div>
   )

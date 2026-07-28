@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, ArrowDown, Mic, Square, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RecommendationCard } from '@/components/chat/recommendation-card'
+import { WebSearchPanel } from '@/components/chat/web-search-panel'
 import { AgentActivityPanel } from '@/components/chat/agent-activity-panel'
 import { useAppStore, type ChatMessage } from '@/lib/store'
 import { useVoiceInput } from '@/hooks/use-voice-input'
@@ -20,9 +21,11 @@ const QUICK_SUGGESTIONS = [
 function MessageBubble({
   msg,
   onAskAi,
+  userQuery,
 }: {
   msg: ChatMessage
   onAskAi: (q: string) => void
+  userQuery?: string
 }) {
   const isUser = msg.role === 'user'
   return (
@@ -54,6 +57,12 @@ function MessageBubble({
               {msg.metadata.recommendations.map((r, i) => (
                 <RecommendationCard key={`${r.productId}-${i}`} rec={r} onAskAi={onAskAi} />
               ))}
+              {/* Web Intelligence panel — shows real-time web results for the user's query */}
+              {userQuery && userQuery.length >= 5 && (
+                <div className="mt-2">
+                  <WebSearchPanel query={userQuery} />
+                </div>
+              )}
             </div>
           )}
       </div>
@@ -188,37 +197,82 @@ export function ChatView() {
             className="absolute inset-0 overflow-y-auto scrollbar-thin pr-1"
           >
             {messages.length === 0 && !loading && (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4 py-10">
-                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white mb-4 shadow-lg">
-                  <Sparkles className="h-8 w-8" />
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center h-full text-center px-4 py-8"
+              >
+                {/* Hero with animated gradient */}
+                <div className="relative mb-5">
+                  <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+                  <div className="relative grid h-18 w-18 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-xl shadow-emerald-500/30 p-5">
+                    <Sparkles className="h-9 w-9" />
+                  </div>
                 </div>
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-xl font-bold tracking-tight asos-gradient-text">
                   Your AI Shopping Copilot
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground max-w-md">
-                  Ask me anything about products, prices, or comparisons across
-                  Amazon, Flipkart, Myntra, Croma and more. Your Digital Persona
-                  Twin remembers what matters to you.
+                <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
+                  Ask me to find, compare, or track products across{' '}
+                  <span className="font-medium text-foreground">9 platforms</span>.
+                  Your Digital Persona Twin remembers what matters to you.
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2 justify-center">
-                  {QUICK_SUGGESTIONS.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => send(q)}
-                      className="rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-colors"
-                    >
-                      {q}
-                    </button>
+
+                {/* Agent badges */}
+                <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
+                  {['Intent', 'Search', 'Memory', 'Digital Twin', 'MARE', 'Price', 'Explainability'].map((agent) => (
+                    <span key={agent} className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-medium border border-emerald-500/20">
+                      <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                      {agent}
+                    </span>
                   ))}
                 </div>
-              </div>
+
+                {/* Quick suggestions */}
+                <div className="mt-6 w-full max-w-lg">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Try asking
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {QUICK_SUGGESTIONS.map((q, i) => (
+                      <motion.button
+                        key={q}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        onClick={() => send(q)}
+                        className="group rounded-xl border border-border/60 bg-card/60 p-3 text-left text-xs hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all hover:shadow-md hover:shadow-emerald-500/10"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20 transition-colors">
+                            <Sparkles className="h-3 w-3" />
+                          </div>
+                          <span className="leading-snug">{q}</span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             )}
 
             <div className="space-y-4 pb-4">
               <AnimatePresence initial={false}>
-                {messages.map((m) => (
-                  <MessageBubble key={m.id} msg={m} onAskAi={onAskAi} />
-                ))}
+                {messages.map((m, idx) => {
+                  // Find the most recent user message before this assistant message
+                  let userQuery: string | undefined
+                  if (m.role === 'assistant' && m.metadata?.recommendations?.length) {
+                    for (let j = idx - 1; j >= 0; j--) {
+                      if (messages[j].role === 'user') {
+                        userQuery = messages[j].content
+                        break
+                      }
+                    }
+                  }
+                  return (
+                    <MessageBubble key={m.id} msg={m} onAskAi={onAskAi} userQuery={userQuery} />
+                  )
+                })}
               </AnimatePresence>
 
               {loading && (
