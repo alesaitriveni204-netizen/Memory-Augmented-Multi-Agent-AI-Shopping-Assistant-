@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateDemoUser } from "@/lib/session";
+import { resolveConversationContext } from "@/lib/conversation-context";
 import {
   intentAgent,
   ahde,
@@ -47,8 +48,12 @@ export async function POST(req: Request) {
 
     const start = Date.now();
 
-    // 1. Intent detection
-    const intent = await intentAgent(message);
+    // 0. Resolve conversation context (pronouns/references)
+    const { resolved: resolvedMessage, wasResolved: contextResolved, referencedProduct } =
+      await resolveConversationContext(user.id, message);
+
+    // 1. Intent detection (use resolved message)
+    const intent = await intentAgent(resolvedMessage);
 
     // 2. Load Digital Twin
     const twin = await digitalTwinAgent(user.id);
@@ -187,6 +192,10 @@ export async function POST(req: Request) {
       agentsUsed: plan.requiredAgents,
       messageId: assistantMsg.id,
       userMessageId: userMsg.id,
+      contextResolved,
+      referencedProduct,
+      originalMessage: message,
+      resolvedMessage,
     });
   } catch (err: any) {
     console.error("[api/chat] error:", err);

@@ -28,6 +28,7 @@ import { ScoreRing } from '@/components/common/score-ring'
 import { ScoreBars } from '@/components/common/score-bars'
 import { Sparkline } from '@/components/common/sparkline'
 import { BuyWaitAdvice } from '@/components/chat/buy-wait-advice'
+import { BundleCard } from '@/components/chat/bundle-card'
 import { usePriceHistory } from '@/hooks/use-price-history'
 import {
   formatINR,
@@ -404,6 +405,10 @@ export function RecommendationCard({
                         priceAdvice={rec.priceAdvice as any}
                         priceHistory={priceSeries}
                       />
+                    </div>
+                    {/* Smart Bundle Recommendations */}
+                    <div className="mt-2">
+                      <BundleCard productId={rec.productId} productName={rec.name} />
                     </div>
                   </div>
                 </>

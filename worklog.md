@@ -420,3 +420,72 @@ App stable from round 2. 9 views, 11 agents, MARE/AHDE/DPT working. Demo user: S
 6. **Conversation memory**: Let the chat remember context within a session (e.g., "compare it with X" refers to previous product)
 7. **Price alert email/notification**: Real-time push when wishlist target hit (currently generates DB notification only)
 8. **Onboarding enhancement**: Add a "skip onboarding" option + personality quiz mode
+
+---
+Task ID: 11 (cron webDevReview round 4)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Smart bundles + Spending tracker + Conversation memory + styling polish
+
+## Current Project Status Assessment
+App stable from round 3. 9 views, 11 agents, MARE/AHDE/DPT working. Round 3 added: Web search (Web Intelligence panel), Buy/Wait price prediction, Twin evolution timeline, chat empty state + footer polish. Demo user: Student Shopper, twin confidence 42%. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat, all views via agent-browser
+- Verified: 8 agents activated for recommendation, twin confidence 42%
+- No bugs found — app stable
+
+### New Feature 1: Smart Bundle Recommendations ("Complete Your Setup")
+- **Backend**: Created `src/app/api/bundles/route.ts` — takes a productId, finds complementary products via category complement map, uses LLM to curate 2 thematic bundles (2-3 products each) with title, reason, budget tier. Computes bundle total price, MRP, savings.
+- **Frontend**: Created `src/components/chat/bundle-card.tsx` — collapsible "Complete Your Setup" panel with:
+  - Purple-themed AI bundles badge
+  - Bundle title, reason, budget badge (budget/mid-range/premium)
+  - Product list with brand visuals, names, prices, "+ Compare" buttons
+  - Bundle total (price + MRP strikethrough + savings) + "Compare all" button
+- Added to recommendation card (below Buy/Wait advice in expanded section)
+- Verified: LLM generated "Gaming Performance Bundle" (Sony WF-1000XM5 + OnePlus Buds 3, ₹29,600, save ₹4,400) and "Tech Enthusiast Kit" (Apple AirPods Pro 2 + Samsung Galaxy Watch 6, ₹53,800, save ₹8,100)
+
+### New Feature 2: Spending Tracker in Insights
+- **Backend**: Enhanced `src/app/api/insights/route.ts` — computes monthly spending from purchased recommendations, category spending breakdown, total spent/saved/purchase count. Includes simulated data (clearly marked "Sample") when no purchases exist yet.
+- **Frontend**: Added Spending Tracker section to insights-view with:
+  - 3 summary cards (Total Spent, Total Saved, Purchases) with AnimatedNumber counters
+  - Monthly spending area chart (Recharts) — spent (emerald) + saved (rose) over 6 months
+  - Spending by category bar chart (purple)
+  - "Sample" badge when data is simulated
+- VLM verified: "summary cards, monthly spending chart, spending by category chart, polished design"
+
+### New Feature 3: Conversation Memory (context resolver)
+- Created `src/lib/conversation-context.ts` — detects pronouns/references ("it", "this", "compare it with") in user messages, fetches last 6 chat messages, extracts mentioned products from assistant recommendations + user messages, uses LLM to resolve references
+- Integrated into `src/app/api/chat/route.ts` — runs before intent detection, passes resolved message to intent agent + search agent
+- Returns `contextResolved`, `referencedProduct`, `originalMessage`, `resolvedMessage` in API response
+- Example: "compare it with MacBook Air" → resolves "it" to the previously discussed product
+
+### Styling Polish
+- **Sidebar nav**: Enhanced active state with gradient background (emerald→teal), left accent bar (gradient), icon scale-110 on active, hover scale-105, pulsing active dot
+- **ProductVisual**: Added shine effect (diagonal light streak), larger top-right highlight blur, drop-shadow on initial, group-hover scale-105, 3-stop gradient (color → 80% → 60% opacity)
+- VLM confirmed: "Discover active state with gradient background and left accent bar, colored brand visuals, polished dark mode aesthetic"
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200 on / and /api/insights), no runtime errors
+- Smart bundles: LLM generated 2 thematic bundles with real products + savings
+- Spending tracker: VLM verified charts + summary cards render correctly
+- Conversation memory: context resolver implemented and integrated
+- Styling: VLM verified sidebar active state + product visuals
+
+## Unresolved Issues / Risks
+- Conversation memory adds ~1-2s latency when pronouns detected (LLM call) — acceptable, only triggers on pronoun-containing messages
+- Spending tracker shows simulated data until user marks products as "purchased" (clearly labeled "Sample")
+- Smart bundles add ~2-3s latency per card expand (LLM call) — acceptable
+- VLM sometimes can't see below-the-fold content (features verified via accessibility tree + DOM)
+
+## Priority Recommendations for Next Phase
+1. **Image-based product search**: Use VLM skill to let users upload a product image and find visually similar products
+2. **Export insights to PDF**: Use pdf skill to generate downloadable shopping intelligence report
+3. **More products**: Expand catalog from 30 to 60+ products
+4. **Price alert push notifications**: Real-time push when wishlist target hit
+5. **Onboarding enhancement**: Add "skip onboarding" + personality quiz mode
+6. **Smart bundle purchase**: Let users add entire bundle to wishlist/cart in one click
+7. **Spending goals**: Let users set monthly budget and track progress
+8. **Comparison history**: Save past comparisons for revisit

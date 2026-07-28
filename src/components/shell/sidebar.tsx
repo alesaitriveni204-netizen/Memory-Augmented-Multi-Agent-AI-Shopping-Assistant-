@@ -51,23 +51,26 @@ export function Sidebar() {
             onClick={() => setActiveView(item.key)}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+              'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
               active
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/5 text-emerald-700 dark:text-emerald-300 font-semibold shadow-sm'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
             )}
           >
+            {active && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-gradient-to-b from-emerald-500 to-teal-500" />
+            )}
             <Icon
               className={cn(
-                'h-4 w-4 shrink-0',
+                'h-4 w-4 shrink-0 transition-transform',
                 active
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-muted-foreground group-hover:text-foreground',
+                  ? 'text-emerald-600 dark:text-emerald-400 scale-110'
+                  : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105',
               )}
             />
             <span className="truncate">{item.label}</span>
             {active && (
-              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             )}
           </button>
         )

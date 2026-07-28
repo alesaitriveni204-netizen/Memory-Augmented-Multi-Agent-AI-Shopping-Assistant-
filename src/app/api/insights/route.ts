@@ -90,6 +90,79 @@ export async function GET() {
       take: 7,
     });
 
+    // ── Spending tracker: monthly spending from purchased recommendations ──
+    const purchasedRecs = recs.filter((r) => r.status === "purchased");
+    const monthlySpending: Record<string, { spent: number; saved: number; count: number }> = {};
+    const categorySpending: Record<string, { spent: number; count: number }> = {};
+    let totalSpent = 0;
+
+    for (const r of purchasedRecs) {
+      const prices = r.product.platformPrices;
+      if (!prices || prices.length === 0) continue;
+      const inStock = prices.filter((p) => p.inStock);
+      const candidates = inStock.length > 0 ? inStock : prices;
+      const best = candidates.reduce((min, p) => (p.price < min.price ? p : min), candidates[0]);
+      const monthKey = new Date(r.createdAt).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+      if (!monthlySpending[monthKey]) monthlySpending[monthKey] = { spent: 0, saved: 0, count: 0 };
+      monthlySpending[monthKey].spent += best.price;
+      monthlySpending[monthKey].saved += (best.mrp - best.price);
+      monthlySpending[monthKey].count += 1;
+      totalSpent += best.price;
+
+      const cat = r.product.category;
+      if (!categorySpending[cat]) categorySpending[cat] = { spent: 0, count: 0 };
+      categorySpending[cat].spent += best.price;
+      categorySpending[cat].count += 1;
+    }
+
+    const spendingByMonth = Object.entries(monthlySpending)
+      .map(([month, data]) => ({ month, ...data }))
+      .slice(-6); // last 6 months
+
+    const spendingByCategory = Object.entries(categorySpending)
+      .map(([category, data]) => ({ category, ...data }))
+      .sort((a, b) => b.spent - a.spent);
+
+    // Simulate spending history if no purchases yet (for demo)
+    if (purchasedRecs.length === 0) {
+      const now = new Date();
+      const simulated = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const month = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        simulated.push({
+          month,
+          spent: Math.round(15000 + Math.random() * 35000),
+          saved: Math.round(2000 + Math.random() * 8000),
+          count: Math.round(1 + Math.random() * 4),
+        });
+      }
+      return NextResponse.json({
+        totalProductsCompared,
+        totalSaved,
+        avgShoppingScore,
+        topCategories,
+        topBrands,
+        platformUsage,
+        memoryCount,
+        twinConfidence: user.twinConfidence,
+        priceHistoryTrend,
+        recentActivity,
+        spending: {
+          totalSpent: simulated.reduce((s, m) => s + m.spent, 0),
+          totalSavedThisYear: simulated.reduce((s, m) => s + m.saved, 0),
+          purchaseCount: 0,
+          byMonth: simulated,
+          byCategory: [
+            { category: "laptop", spent: 68990, count: 1 },
+            { category: "earbuds", spent: 5499, count: 1 },
+            { category: "fashion", spent: 2999, count: 2 },
+          ],
+          simulated: true,
+        },
+      });
+    }
+
     return NextResponse.json({
       totalProductsCompared,
       totalSaved,
@@ -101,6 +174,14 @@ export async function GET() {
       twinConfidence: user.twinConfidence,
       priceHistoryTrend,
       recentActivity,
+      spending: {
+        totalSpent,
+        totalSavedThisYear: Object.values(monthlySpending).reduce((s, m) => s + m.saved, 0),
+        purchaseCount: purchasedRecs.length,
+        byMonth: spendingByMonth,
+        byCategory: spendingByCategory,
+        simulated: false,
+      },
     });
   } catch (err: any) {
     console.error("[api/insights GET] error:", err);

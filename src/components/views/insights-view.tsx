@@ -11,6 +11,9 @@ import {
   Wallet,
   Brain,
   Star,
+  ShoppingBag,
+  PiggyBank,
+  Calendar,
 } from 'lucide-react'
 import {
   BarChart,
@@ -26,6 +29,8 @@ import {
   Line,
   CartesianGrid,
   Legend,
+  AreaChart,
+  Area,
 } from 'recharts'
 import { Badge } from '@/components/ui/badge'
 import { LoadingState } from '@/components/common/empty-state'
@@ -53,6 +58,14 @@ interface InsightsData {
     title: string
     createdAt: string
   }>
+  spending?: {
+    totalSpent: number
+    totalSavedThisYear: number
+    purchaseCount: number
+    byMonth: Array<{ month: string; spent: number; saved: number; count: number }>
+    byCategory: Array<{ category: string; spent: number; count: number }>
+    simulated: boolean
+  }
 }
 
 export function InsightsView() {
@@ -346,6 +359,117 @@ export function InsightsView() {
           )}
         </div>
       </div>
+
+      {/* Spending Tracker */}
+      {data.spending && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-border/60 bg-card p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                <ShoppingBag className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Spending Tracker</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {data.spending.simulated ? "Sample data — mark products as purchased to track real spending" : "Based on your purchases"}
+                </div>
+              </div>
+            </div>
+            {data.spending.simulated && (
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 border-amber-500/30 text-amber-600 dark:text-amber-400">
+                Sample
+              </Badge>
+            )}
+          </div>
+
+          {/* Spending summary cards */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="rounded-lg bg-muted/30 p-2.5">
+              <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
+                <Wallet className="h-2.5 w-2.5" /> Total Spent
+              </div>
+              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                ₹<AnimatedNumber value={data.spending.totalSpent} duration={1000} format={(n) => Math.round(n).toLocaleString('en-IN')} />
+              </div>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-2.5">
+              <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
+                <PiggyBank className="h-2.5 w-2.5" /> Total Saved
+              </div>
+              <div className="text-base font-bold text-rose-500">
+                ₹<AnimatedNumber value={data.spending.totalSavedThisYear} duration={1000} format={(n) => Math.round(n).toLocaleString('en-IN')} />
+              </div>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-2.5">
+              <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
+                <Package className="h-2.5 w-2.5" /> Purchases
+              </div>
+              <div className="text-base font-bold">
+                <AnimatedNumber value={data.spending.purchaseCount} duration={1000} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Monthly spending chart */}
+            <div>
+              <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                <Calendar className="h-3 w-3 text-emerald-500" /> Monthly Spending
+              </div>
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.spending.byMonth} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="spentGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="savedGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis dataKey="month" tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }} />
+                    <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}
+                      formatter={(value: number, name: string) => [`₹${value.toLocaleString('en-IN')}`, name === 'spent' ? 'Spent' : 'Saved']}
+                    />
+                    <Area type="monotone" dataKey="spent" stroke="#10b981" strokeWidth={2} fill="url(#spentGrad)" name="spent" />
+                    <Area type="monotone" dataKey="saved" stroke="#f43f5e" strokeWidth={1.5} fill="url(#savedGrad)" name="saved" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Spending by category */}
+            <div>
+              <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                <BarChart3 className="h-3 w-3 text-purple-500" /> Spending by Category
+              </div>
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.spending.byCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis type="number" tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <YAxis type="category" dataKey="category" tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }} width={70} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}
+                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Spent']}
+                    />
+                    <Bar dataKey="spent" fill="#a855f7" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Recent Activity */}
       <div className="rounded-xl border border-border/60 bg-card p-4">
