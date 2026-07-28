@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   PiggyBank,
   Calendar,
+  Download,
 } from 'lucide-react'
 import {
   BarChart,
@@ -33,6 +34,7 @@ import {
   Area,
 } from 'recharts'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/common/empty-state'
 import { AnimatedNumber } from '@/components/common/animated-number'
 import {
@@ -132,13 +134,25 @@ export function InsightsView() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-emerald-500" /> Insights Dashboard
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Your shopping intelligence at a glance.
-        </p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-emerald-500" /> Insights Dashboard
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Your shopping intelligence at a glance.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => {
+            window.open('/api/export', '_blank')
+          }}
+        >
+          <Download className="h-3.5 w-3.5 mr-1" /> Export Report
+        </Button>
       </div>
 
       {/* KPIs */}

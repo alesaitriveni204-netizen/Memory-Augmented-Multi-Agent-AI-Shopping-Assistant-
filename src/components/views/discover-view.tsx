@@ -35,6 +35,26 @@ interface ApiProduct {
   }>
 }
 
+// Helper: get best (lowest in-stock) price for a product
+function getBestPrice(p: ApiProduct): number {
+  if (p.platformPrices?.length > 0) {
+    const inStock = p.platformPrices.filter((pp) => pp.inStock)
+    const candidates = inStock.length > 0 ? inStock : p.platformPrices
+    return Math.min(...candidates.map((pp) => pp.price))
+  }
+  return p.basePrice
+}
+
+// Helper: get best discount % for a product
+function getBestDiscount(p: ApiProduct): number {
+  if (p.platformPrices?.length > 0) {
+    const inStock = p.platformPrices.filter((pp) => pp.inStock)
+    const candidates = inStock.length > 0 ? inStock : p.platformPrices
+    return Math.max(...candidates.map((pp) => pp.discount || 0))
+  }
+  return 0
+}
+
 export function DiscoverView() {
   const [search, setSearch] = React.useState('')
   const [category, setCategory] = React.useState<string>('')
@@ -43,6 +63,7 @@ export function DiscoverView() {
   const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 250000])
   const [minRating, setMinRating] = React.useState(0)
   const [selectedBrands, setSelectedBrands] = React.useState<string[]>([])
+  const [sortBy, setSortBy] = React.useState<'relevance' | 'price-low' | 'price-high' | 'rating' | 'discount' | 'name'>('relevance')
   const setActiveView = useAppStore((s) => s.setActiveView)
   const setPendingChatInput = useAppStore((s) => s.setPendingChatInput)
   const addToCompare = useAppStore((s) => s.addToCompare)
@@ -74,14 +95,12 @@ export function DiscoverView() {
     return Array.from(brands).sort()
   }, [data])
 
-  // Apply client-side filters (price, rating, brand)
+  // Apply client-side filters (price, rating, brand) + sorting
   const filteredProducts = React.useMemo(() => {
     let result = data?.products || []
     if (priceRange[0] > 0 || priceRange[1] < 250000) {
       result = result.filter((p) => {
-        const best = p.platformPrices?.length > 0
-          ? Math.min(...p.platformPrices.filter((pp) => pp.inStock).map((pp) => pp.price))
-          : p.basePrice
+        const best = getBestPrice(p)
         return best >= priceRange[0] && best <= priceRange[1]
       })
     }
@@ -91,8 +110,27 @@ export function DiscoverView() {
     if (selectedBrands.length > 0) {
       result = result.filter((p) => selectedBrands.includes(p.brand))
     }
-    return result
-  }, [data, priceRange, minRating, selectedBrands])
+    // Apply sorting
+    const sorted = [...result]
+    switch (sortBy) {
+      case 'price-low':
+        sorted.sort((a, b) => getBestPrice(a) - getBestPrice(b))
+        break
+      case 'price-high':
+        sorted.sort((a, b) => getBestPrice(b) - getBestPrice(a))
+        break
+      case 'rating':
+        sorted.sort((a, b) => b.rating - a.rating)
+        break
+      case 'discount':
+        sorted.sort((a, b) => getBestDiscount(b) - getBestDiscount(a))
+        break
+      case 'name':
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+        break
+    }
+    return sorted
+  }, [data, priceRange, minRating, selectedBrands, sortBy])
 
   const activeFilterCount = (priceRange[0] > 0 || priceRange[1] < 250000 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (selectedBrands.length > 0 ? 1 : 0)
 
@@ -188,9 +226,23 @@ export function DiscoverView() {
               Clear all
             </button>
           )}
-          <span className="text-[11px] text-muted-foreground ml-auto">
-            {products.length} product{products.length !== 1 ? 's' : ''}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              {products.length} product{products.length !== 1 ? 's' : ''}
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="rounded-lg border border-border/60 bg-card/60 px-2 py-1 text-xs outline-none cursor-pointer hover:border-emerald-500/40 transition-colors focus:border-emerald-500/50"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+              <option value="discount">Biggest Discount</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
+          </div>
         </div>
 
         {showFilters && (

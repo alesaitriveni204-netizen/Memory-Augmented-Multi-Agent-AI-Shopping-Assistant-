@@ -53,6 +53,15 @@ interface ApiWishlistItem {
   }
 }
 
+// Helper: get best price for a wishlist item
+function getWishlistBestPrice(item: ApiWishlistItem): number {
+  const prices = item.product.platformPrices
+  if (!prices || prices.length === 0) return item.product.basePrice
+  const inStock = prices.filter((p) => p.inStock)
+  const candidates = inStock.length > 0 ? inStock : prices
+  return Math.min(...candidates.map((p) => p.price))
+}
+
 export function WishlistView() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery<{ items: ApiWishlistItem[] }>({
@@ -97,15 +106,62 @@ export function WishlistView() {
 
   const items = data?.items || []
 
+  // Sort state
+  const [sortBy, setSortBy] = React.useState<'date' | 'price-low' | 'price-high' | 'target-diff' | 'name'>('date')
+
+  // Apply sorting
+  const sortedItems = React.useMemo(() => {
+    const sorted = [...items]
+    switch (sortBy) {
+      case 'price-low':
+        sorted.sort((a, b) => getWishlistBestPrice(a) - getWishlistBestPrice(b))
+        break
+      case 'price-high':
+        sorted.sort((a, b) => getWishlistBestPrice(b) - getWishlistBestPrice(a))
+        break
+      case 'target-diff':
+        // Sort by how close current price is to target (closest first)
+        sorted.sort((a, b) => {
+          const aDiff = a.targetPrice ? Math.abs(getWishlistBestPrice(a) - a.targetPrice) : Infinity
+          const bDiff = b.targetPrice ? Math.abs(getWishlistBestPrice(b) - b.targetPrice) : Infinity
+          return aDiff - bDiff
+        })
+        break
+      case 'name':
+        sorted.sort((a, b) => a.product.name.localeCompare(b.product.name))
+        break
+      case 'date':
+      default:
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        break
+    }
+    return sorted
+  }, [items, sortBy])
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Heart className="h-5 w-5 text-rose-500 fill-rose-500" /> Your Wishlist
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Track products and get notified when prices drop to your target.
-        </p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Heart className="h-5 w-5 text-rose-500 fill-rose-500" /> Your Wishlist
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Track products and get notified when prices drop to your target.
+          </p>
+        </div>
+        {items.length > 0 && (
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="rounded-lg border border-border/60 bg-card/60 px-2 py-1 text-xs outline-none cursor-pointer hover:border-emerald-500/40 transition-colors focus:border-emerald-500/50"
+          >
+            <option value="date">Recently Added</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="target-diff">Closest to Target</option>
+            <option value="name">Name (A-Z)</option>
+          </select>
+        )}
       </div>
 
       {isLoading ? (
@@ -123,7 +179,7 @@ export function WishlistView() {
         />
       ) : (
         <div className="space-y-3">
-          {items.map((item, i) => {
+          {sortedItems.map((item, i) => {
             const best = item.product.platformPrices?.reduce(
               (min, pp) => (pp.price < min.price ? pp : min),
               item.product.platformPrices[0],

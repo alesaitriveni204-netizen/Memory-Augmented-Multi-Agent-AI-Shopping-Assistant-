@@ -707,3 +707,64 @@ App stable from round 6. 9 views, 11 agents, 58-product catalog, product detail 
 6. **Advanced sorting in Discover**: Sort by price, rating, newest, discount
 7. **Product comparison from detail modal**: Add "Compare" directly in detail modal
 8. **Wishlist smart sorting**: Sort wishlist by Shopping Score, price drop potential
+
+---
+Task ID: 15 (cron webDevReview round 8)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Advanced sorting + Wishlist sorting + Export report
+
+## Current Project Status Assessment
+App stable from round 7. 9 views, 11 agents, 58-product catalog, advanced filters, similar products, chat search, product detail modal, smart bundles, image search, comparison history. Demo user: Student Shopper, twin confidence 57%. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat, Discover, all views via agent-browser
+- Verified: 58 products loading, twin confidence 57%
+- No bugs found — app stable
+
+### New Feature 1: Advanced Sorting in Discover
+- Added `sortBy` state with 6 options: relevance, price-low, price-high, rating, discount, name
+- Added sort dropdown UI (native select with emerald hover) next to product count
+- Added `getBestPrice()` and `getBestDiscount()` helper functions
+- Sorting applied in `filteredProducts` memo (after filtering, before render)
+- Tested: "Highest Rated" sort moved LG OLED (4.8★) to first position
+- Options: Relevance (default), Price: Low to High, Price: High to Low, Highest Rated, Biggest Discount, Name (A-Z)
+
+### New Feature 2: Wishlist Smart Sorting
+- Added `sortBy` state with 5 options: date, price-low, price-high, target-diff, name
+- Added sort dropdown in wishlist header (next to title)
+- Added `getWishlistBestPrice()` helper function
+- "Closest to Target" sort — sorts by how close current price is to target price (most actionable first)
+- Applied in `sortedItems` memo
+- Options: Recently Added (default), Price: Low to High, Price: High to Low, Closest to Target, Name (A-Z)
+
+### New Feature 3: Export Insights Report
+- **Backend**: Created `src/app/api/export/route.ts` (GET) — fetches all user data (memories, twin, wishlist, recommendations, timeline, notifications, accounts) and returns as downloadable JSON file with Content-Disposition header
+- Report includes: meta (export timestamp, app version, user info), summary stats, digital twin, onboarding data, memories, wishlist with best prices, recommendations with shopping scores, timeline events
+- **Frontend**: Added "Export Report" button (Download icon) in Insights header
+- Opens /api/export in new tab → triggers JSON file download
+- Tested: returns HTTP 200 with valid JSON containing user data, twin confidence 59%, memories, recommendations
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200 on /, /api/init, /api/export), no runtime errors
+- Discover sorting: tested "Highest Rated" — LG OLED (4.8★) moved to first position
+- Wishlist sorting: implemented with 5 sort options including "Closest to Target"
+- Export report: API returns valid JSON with comprehensive user data
+- All features work end-to-end
+
+## Unresolved Issues / Risks
+- Export is JSON format (not PDF) — simpler and more reliable for data export; PDF generation could be added with pdf skill in future
+- Sorting is client-side — fine for 58-product catalog
+- No persistent sort preference (resets on page reload) — acceptable
+
+## Priority Recommendations for Next Phase
+1. **Price alert push notifications**: Real-time push when wishlist target hit
+2. **Spending goals**: Let users set monthly budget and track progress
+3. **Social features**: Share comparisons/wishlist with friends
+4. **Multi-user support**: Allow switching between user profiles
+5. **PDF export**: Use pdf skill to generate formatted PDF report (currently JSON)
+6. **Product comparison from detail modal**: Add "Compare" button in detail modal
+7. **Wishlist bulk actions**: Select multiple items for batch delete/compare
+8. **Discover infinite scroll**: Load more products as user scrolls
