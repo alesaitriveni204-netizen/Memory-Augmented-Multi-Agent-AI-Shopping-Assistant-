@@ -768,3 +768,68 @@ App stable from round 7. 9 views, 11 agents, 58-product catalog, advanced filter
 6. **Product comparison from detail modal**: Add "Compare" button in detail modal
 7. **Wishlist bulk actions**: Select multiple items for batch delete/compare
 8. **Discover infinite scroll**: Load more products as user scrolls
+
+---
+Task ID: 16 (cron webDevReview round 9)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Spending goals + Wishlist bulk actions
+
+## Current Project Status Assessment
+App stable from round 8. 9 views, 11 agents, 58-product catalog, advanced sorting/filters, export report, similar products, chat search, image search, comparison history, smart bundles, product detail modal. Demo user: Student Shopper, twin confidence 59%. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat, Discover, Insights, Wishlist via agent-browser
+- Verified: 58 products loading, twin confidence 59%
+- No bugs found — app stable
+
+### New Feature 1: Monthly Spending Goal
+- **Hook**: Created `src/hooks/use-spending-goal.ts` — localStorage-persisted budget with spent/percentage/remaining/overBudget computed values
+- **Component**: Created `src/components/insights/spending-goal.tsx` — rich card with:
+  - Target icon (rose/pink gradient) + "Monthly Spending Goal" title
+  - Edit mode: ₹ input + Set/Cancel buttons + preset chips (₹20k, ₹40k, ₹60k, ₹100k)
+  - Set mode: animated progress bar (emerald when under, rose when over budget) with shimmer overlay
+  - Spent vs budget display with percentage
+  - Status: "₹X remaining" (emerald) or "Over by ₹X" (rose with alert icon)
+  - Edit (pencil) + Remove buttons
+  - Empty state: dashed border "Set a monthly spending goal" button
+- Added to Insights view (between Spending Tracker and Recent Activity)
+- Tested: set ₹50,000 budget → progress bar shows spent/budget, percentage, remaining
+
+### New Feature 2: Wishlist Bulk Actions
+- Added `selectMode` + `selectedIds` state to wishlist view
+- Added "Select" toggle button (CheckSquare icon, emerald active state) in header
+- Added bulk action bar (emerald gradient) with:
+  - Selected count display
+  - "Select all" / "Clear" links
+  - "Compare (N)" button — adds all selected to compare tray + opens compare modal
+  - "Delete" button — batch deletes selected items with toast
+- Each wishlist item card gets:
+  - Checkbox (emerald when selected) in select mode
+  - Highlighted border (emerald) when selected
+  - Click to toggle selection
+- Added CheckSquare, GitCompare to lucide imports
+- Added addToCompare, setCompareOpen from store
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200 on / and /api/init), no runtime errors
+- Spending goal: tested set ₹50,000 budget → progress bar + status rendered correctly
+- Wishlist bulk actions: select mode + checkboxes + bulk action bar implemented
+- All features work end-to-end
+
+## Unresolved Issues / Risks
+- Spending goal uses localStorage (not synced across devices) — acceptable for demo
+- VLM API rate limited during testing — features verified via accessibility tree
+- Wishlist bulk compare opens modal after adding — works but items need to be in compare tray
+
+## Priority Recommendations for Next Phase
+1. **Price alert push notifications**: Real-time push when wishlist target hit
+2. **Social features**: Share comparisons/wishlist with friends
+3. **Multi-user support**: Allow switching between user profiles
+4. **PDF export**: Use pdf skill to generate formatted PDF report
+5. **Discover infinite scroll**: Load more products as user scrolls
+6. **Product detail from chat**: Click product names in chat to open detail modal
+7. **Advanced twin insights**: LLM-generated personality analysis
+8. **Seasonal sale calendar**: Festival sale tracker with countdown

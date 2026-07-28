@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/common/empty-state'
 import { AnimatedNumber } from '@/components/common/animated-number'
+import { SpendingGoal } from '@/components/insights/spending-goal'
 import {
   formatINR,
   platformColor,
@@ -484,6 +485,9 @@ export function InsightsView() {
           </div>
         </motion.div>
       )}
+
+      {/* Spending Goal */}
+      <SpendingGoal monthlySpent={data.spending?.byMonth?.[data.spending.byMonth.length - 1]?.spent ?? 0} />
 
       {/* Recent Activity */}
       <div className="rounded-xl border border-border/60 bg-card p-4">

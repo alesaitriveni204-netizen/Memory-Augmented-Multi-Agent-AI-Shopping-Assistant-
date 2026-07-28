@@ -11,6 +11,8 @@ import {
   TrendingDown,
   ExternalLink,
   Compass,
+  CheckSquare,
+  GitCompare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -64,6 +66,10 @@ function getWishlistBestPrice(item: ApiWishlistItem): number {
 
 export function WishlistView() {
   const qc = useQueryClient()
+  const [selectMode, setSelectMode] = React.useState(false)
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+  const addToCompare = useAppStore((s) => s.addToCompare)
+  const setCompareOpen = useAppStore((s) => s.setCompareOpen)
   const { data, isLoading } = useQuery<{ items: ApiWishlistItem[] }>({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -150,19 +156,101 @@ export function WishlistView() {
           </p>
         </div>
         {items.length > 0 && (
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="rounded-lg border border-border/60 bg-card/60 px-2 py-1 text-xs outline-none cursor-pointer hover:border-emerald-500/40 transition-colors focus:border-emerald-500/50"
-          >
-            <option value="date">Recently Added</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="target-diff">Closest to Target</option>
-            <option value="name">Name (A-Z)</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="rounded-lg border border-border/60 bg-card/60 px-2 py-1 text-xs outline-none cursor-pointer hover:border-emerald-500/40 transition-colors focus:border-emerald-500/50"
+            >
+              <option value="date">Recently Added</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="target-diff">Closest to Target</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
+            <button
+              onClick={() => { setSelectMode(!selectMode); setSelectedIds([]) }}
+              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors ${selectMode ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'border-border/60 text-muted-foreground hover:bg-muted'}`}
+            >
+              <CheckSquare className="h-3 w-3" /> {selectMode ? 'Cancel' : 'Select'}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && items.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5"
+        >
+          <span className="text-xs font-medium">
+            {selectedIds.length} selected
+          </span>
+          <button
+            onClick={() => setSelectedIds(sortedItems.map((i) => i.id))}
+            className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline"
+          >
+            Select all
+          </button>
+          <button
+            onClick={() => setSelectedIds([])}
+            className="text-[11px] text-muted-foreground hover:underline"
+          >
+            Clear
+          </button>
+          <div className="ml-auto flex gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              disabled={selectedIds.length < 2}
+              onClick={() => {
+                selectedIds.forEach((id) => {
+                  const item = sortedItems.find((i) => i.id === id)
+                  if (item) {
+                    addToCompare({
+                      productId: item.productId,
+                      name: item.product.name,
+                      brand: item.product.brand,
+                      category: item.product.category,
+                      imageColor: item.product.imageColor,
+                      bestPlatform: item.product.platformPrices?.[0]?.platform ?? 'amazon',
+                      bestPrice: getWishlistBestPrice(item),
+                      mrp: item.product.platformPrices?.[0]?.mrp ?? item.product.basePrice,
+                      discount: item.product.platformPrices?.[0]?.discount ?? 0,
+                      rating: item.product.rating,
+                      reviewCount: item.product.reviewCount,
+                      deliveryDays: item.product.platformPrices?.[0]?.deliveryDays ?? 3,
+                    })
+                  }
+                })
+                setSelectMode(false)
+                setSelectedIds([])
+                setCompareOpen(true)
+              }}
+            >
+              <GitCompare className="h-3 w-3 mr-1" /> Compare ({selectedIds.length})
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs text-rose-500 hover:bg-rose-500/10"
+              disabled={selectedIds.length === 0}
+              onClick={async () => {
+                await Promise.all(selectedIds.map((id) => fetch(`/api/wishlist/${id}`, { method: 'DELETE' })))
+                qc.invalidateQueries({ queryKey: ['wishlist'] })
+                toast.success(`Deleted ${selectedIds.length} items`)
+                setSelectMode(false)
+                setSelectedIds([])
+              }}
+            >
+              <Trash2 className="h-3 w-3 mr-1" /> Delete
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {isLoading ? (
         <LoadingState label="Loading wishlist…" />
@@ -193,9 +281,21 @@ export function WishlistView() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
-                className="rounded-xl border border-border/60 bg-card p-3"
+                className={`rounded-xl border bg-card p-3 transition-colors ${selectMode && selectedIds.includes(item.id) ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-border/60'}`}
+                onClick={() => {
+                  if (selectMode) {
+                    setSelectedIds((prev) =>
+                      prev.includes(item.id) ? prev.filter((x) => x !== item.id) : [...prev, item.id],
+                    )
+                  }
+                }}
               >
                 <div className="flex gap-3">
+                  {selectMode && (
+                    <div className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 mt-1 transition-colors ${selectedIds.includes(item.id) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border/60'}`}>
+                      {selectedIds.includes(item.id) && <CheckSquare className="h-3 w-3" />}
+                    </div>
+                  )}
                   <ProductVisual
                     name={item.product.name}
                     brand={item.product.brand}
