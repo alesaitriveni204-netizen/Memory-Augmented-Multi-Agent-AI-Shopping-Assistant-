@@ -127,6 +127,41 @@ export function OnboardingWizard() {
     setActiveView('chat')
   }
 
+  async function skipOnboarding() {
+    setSubmitting(true)
+    try {
+      // Create a default "balanced" persona with sensible defaults
+      const defaultData = {
+        categories: ['laptop', 'phone', 'earbuds'],
+        budgetRange: 'mid',
+        brands: ['Apple', 'Samsung', 'Sony'],
+        platforms: ['amazon', 'flipkart'],
+        shoppingFrequency: 'monthly',
+        discountImportance: 3,
+        deliverySpeed: 3,
+        techFamiliarity: 3,
+        lifestyle: 'I prefer a balanced shopping approach.',
+      }
+      const res = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(defaultData),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Skip failed')
+        return
+      }
+      setUser(data.user)
+      setResult({ personaCluster: data.personaCluster, twin: data.twin })
+      toast.success('Skipped onboarding — default persona created')
+    } catch {
+      toast.error('Network error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const progress = ((step + 1) / STEPS.length) * 100
 
   return (
@@ -161,7 +196,7 @@ export function OnboardingWizard() {
                 <div>
                   <h2 className="text-2xl font-bold">
                     Welcome to{' '}
-                    <span className="asos-gradient-text">AI Shopping OS</span>
+                    <span className="asos-text-shimmer">AI Shopping OS</span>
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
                     A memory-augmented, multi-agent shopping copilot that learns
@@ -188,6 +223,17 @@ export function OnboardingWizard() {
                       One-stop shopping
                     </div>
                   </div>
+                </div>
+
+                {/* Skip option */}
+                <div className="pt-2">
+                  <button
+                    onClick={skipOnboarding}
+                    disabled={submitting}
+                    className="text-[11px] text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors underline-offset-2 hover:underline"
+                  >
+                    Skip onboarding — I'll set up my preferences later
+                  </button>
                 </div>
               </div>
             )}

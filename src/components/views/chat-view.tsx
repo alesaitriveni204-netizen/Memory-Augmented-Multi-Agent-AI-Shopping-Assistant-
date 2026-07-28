@@ -6,6 +6,7 @@ import { Sparkles, Send, ArrowDown, Mic, Square, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RecommendationCard } from '@/components/chat/recommendation-card'
 import { WebSearchPanel } from '@/components/chat/web-search-panel'
+import { ImageSearchButton } from '@/components/chat/image-search-button'
 import { AgentActivityPanel } from '@/components/chat/agent-activity-panel'
 import { useAppStore, type ChatMessage } from '@/lib/store'
 import { useVoiceInput } from '@/hooks/use-voice-input'
@@ -332,6 +333,7 @@ export function ChatView() {
             rows={1}
             className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground max-h-32"
           />
+          <ImageSearchButton />
           <Button
             size="icon"
             variant="ghost"

@@ -243,3 +243,51 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* ===== Glassmorphism card ===== */
+.asos-glass {
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+}
+
+/* ===== Stagger entrance ===== */
+@keyframes asos-stagger-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.asos-stagger {
+  animation: asos-stagger-in 0.35s ease-out both;
+}
+
+/* ===== Subtle float animation ===== */
+@keyframes asos-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.asos-float {
+  animation: asos-float 3s ease-in-out infinite;
+}
+
+/* ===== Gradient text shimmer ===== */
+@keyframes asos-text-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.asos-text-shimmer {
+  background: linear-gradient(90deg, #10b981, #14b8a6, #06b6d4, #14b8a6, #10b981);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: asos-text-shimmer 3s linear infinite;
+}
+
+/* ===== Focus ring ===== */
+.asos-focus-ring:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+

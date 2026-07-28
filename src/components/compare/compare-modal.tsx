@@ -5,10 +5,11 @@ import { useAppStore, type CompareItem } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle, Sparkles, Loader2, Crown } from 'lucide-react'
+import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle, Sparkles, Loader2, Crown, History, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { platformLabel, formatINR, scoreColor } from '@/lib/ui-utils'
 import { Sparkline } from '@/components/common/sparkline'
+import { useComparisonHistory } from '@/hooks/use-comparison-history'
 
 interface Verdict {
   winner: string
@@ -24,11 +25,19 @@ export function CompareModal() {
   const setOpen = useAppStore((s) => s.setCompareOpen)
   const removeFromCompare = useAppStore((s) => s.removeFromCompare)
   const clearCompare = useAppStore((s) => s.clearCompare)
+  const { history, saveComparison, deleteComparison } = useComparisonHistory()
+  const [showHistory, setShowHistory] = React.useState(false)
 
   const [verdict, setVerdict] = React.useState<Verdict | null>(null)
   const [verdictLoading, setVerdictLoading] = React.useState(false)
   const [priceHistories, setPriceHistories] = React.useState<Record<string, Array<{ platform: string; series: Array<{ date: string; price: number }> }>>>({})
 
+  // Save comparison to history when verdict is received
+  React.useEffect(() => {
+    if (verdict && items.length >= 2 && !verdictLoading) {
+      saveComparison(items, { winner: verdict.winner, verdict: verdict.verdict })
+    }
+  }, [verdict, verdictLoading, items, saveComparison])
   // Fetch price histories for sparklines
   React.useEffect(() => {
     if (!open || items.length === 0) {
@@ -136,6 +145,16 @@ export function CompareModal() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {history.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowHistory(!showHistory)}
+                  className={showHistory ? 'text-emerald-600 bg-emerald-500/10' : 'text-muted-foreground hover:text-emerald-600'}
+                >
+                  <History className="h-4 w-4 mr-1" /> History ({history.length})
+                </Button>
+              )}
               {items.length > 0 && (
                 <Button variant="ghost" size="sm" onClick={clearCompare} className="text-muted-foreground hover:text-rose-500">
                   <Trash2 className="h-4 w-4 mr-1" /> Clear
@@ -146,6 +165,65 @@ export function CompareModal() {
               </Button>
             </div>
           </div>
+
+          {/* Comparison History Panel */}
+          <AnimatePresence>
+            {showHistory && history.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-b border-border/60 bg-muted/20 overflow-hidden"
+              >
+                <div className="p-4 max-h-64 overflow-y-auto scrollbar-thin">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Past Comparisons
+                  </div>
+                  <div className="space-y-2">
+                    {history.map((comp) => (
+                      <div key={comp.id} className="rounded-lg border border-border/40 bg-card/60 p-2.5 group">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {comp.verdict && (
+                              <Badge className="text-[9px] py-0 px-1 h-4 bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20 shrink-0">
+                                <Crown className="h-2 w-2 mr-0.5" /> {comp.verdict.winner.split('(')[0].trim()}
+                              </Badge>
+                            )}
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {new Date(comp.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => deleteComparison(comp.id)}
+                            className="text-[10px] text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {comp.items.map((item) => (
+                            <span
+                              key={item.productId}
+                              className="inline-flex items-center gap-1 text-[10px] rounded bg-muted/60 px-1.5 py-0.5"
+                            >
+                              <span
+                                className="h-3 w-3 rounded-sm"
+                                style={{ background: `linear-gradient(135deg, ${item.imageColor}, ${item.imageColor}cc)` }}
+                              />
+                              {item.name.length > 20 ? item.name.slice(0, 20) + '…' : item.name}
+                            </span>
+                          ))}
+                        </div>
+                        {comp.verdict && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5 line-clamp-2 italic">{comp.verdict.verdict}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-12">

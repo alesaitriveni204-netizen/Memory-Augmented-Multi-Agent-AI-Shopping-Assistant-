@@ -489,3 +489,78 @@ App stable from round 3. 9 views, 11 agents, MARE/AHDE/DPT working. Round 3 adde
 6. **Smart bundle purchase**: Let users add entire bundle to wishlist/cart in one click
 7. **Spending goals**: Let users set monthly budget and track progress
 8. **Comparison history**: Save past comparisons for revisit
+
+---
+Task ID: 12 (cron webDevReview round 5)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Image search + Skip onboarding + Comparison history + styling polish
+
+## Current Project Status Assessment
+App stable from round 4. 9 views, 11 agents, MARE/AHDE/DPT working. Round 4 added: Smart bundles, Spending tracker, Conversation memory, sidebar/product visual polish. Demo user: Student Shopper, twin confidence 49%. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat, all views via agent-browser
+- Verified: 8 agents activated for recommendation, twin confidence 49%
+- No bugs found — app stable
+
+### New Feature 1: Image-Based Product Search (VLM skill)
+- **Backend**: Created `src/app/api/image-search/route.ts` — accepts base64 image data URL, uses z-ai-web-dev-sdk `chat.completions.createVision()` to analyze the product image, extracts category/brand/type/color/features/description, then matches against the catalog (category match → brand match → top-rated fallback)
+- **Frontend**: Created `src/components/chat/image-search-button.tsx` — image upload button (ImageIcon) in chat input area + modal with:
+  - Image preview thumbnail
+  - AI Analysis section: description, category/brand/color/type badges, feature chips
+  - Similar Products list: product cards with brand visual, name, rating, price, match reason badge
+  - Click product → handoffs to chat with "Tell me more about X" query
+  - Loading state with shimmer skeletons, "Upload another image" footer
+- Added ImageSearchButton to chat input (between textarea and mic button)
+- Verified: uploaded earbuds image → VLM detected "white true wireless earbuds with matte finish", category=Earbuds, features=[in-ear design, silicone ear tips, touch control surface, sensor dots], returned 4 similar products (Sony WF-1000XM5, Apple AirPods Pro 2, etc.) with "category match" badges
+- VLM confirmed: "polished Dark Mode UI, color-coded tags, card-like rows, professional feel"
+
+### New Feature 2: Onboarding "Skip" Option
+- Added `skipOnboarding()` function to onboarding wizard — creates a default "balanced" persona with sensible defaults (laptop/phone/earbuds categories, mid budget, Apple/Samsung/Sony brands, Amazon/Flipkart platforms)
+- Added "Skip onboarding — I'll set up my preferences later" link button on the welcome step (below the feature cards)
+- Shows toast "Skipped onboarding — default persona created" on success
+- Users can now start chatting immediately without completing the 6-step wizard
+
+### New Feature 3: Comparison History
+- Created `src/hooks/use-comparison-history.ts` — localStorage-based hook that saves comparisons (max 10) with items + verdict + timestamp, supports delete + clear
+- Integrated into CompareModal:
+  - Auto-saves comparison to history when AI Verdict is received
+  - "History (N)" button in modal header (emerald active state)
+  - Expandable history panel showing past comparisons with: winner badge (crown), timestamp, product chips (colored thumbnails + truncated names), verdict text, delete button (hover)
+  - AnimatePresence for smooth expand/collapse
+- Verified: comparison auto-saved when verdict generated, "History (1)" button appeared, panel showed past comparison with winner badge + product chips + verdict text
+
+### Styling Polish
+- Added 5 new CSS utilities to globals.css:
+  - `.asos-glass` — glassmorphism (backdrop-blur + semi-transparent card)
+  - `.asos-stagger` — stagger entrance animation (translateY + scale)
+  - `.asos-float` — subtle float animation (3s ease-in-out)
+  - `.asos-text-shimmer` — animated gradient text (emerald→teal→cyan, 3s linear)
+  - `.asos-focus-ring` — accessible focus outline
+- Applied `asos-text-shimmer` to onboarding "AI Shopping OS" title (animated gradient)
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200 on / and /api/init), no runtime errors
+- Image search: VLM analyzed earbuds image → detected category/features → returned 4 similar products
+- Skip onboarding: function implemented, creates default persona
+- Comparison history: auto-saves on verdict, history panel renders with winner + products + verdict
+- Styling: 5 new CSS utilities added, shimmer text applied to onboarding
+
+## Unresolved Issues / Risks
+- Image search VLM call adds ~3-5s latency (acceptable for image analysis)
+- Comparison history is localStorage-based (not synced across devices) — acceptable for demo
+- Skip onboarding creates a generic "balanced" persona — users can refine via chat interactions
+- VLM sometimes can't see below-the-fold content in screenshots (features verified via accessibility tree)
+
+## Priority Recommendations for Next Phase
+1. **Export insights to PDF**: Use pdf skill to generate downloadable shopping intelligence report
+2. **More products**: Expand catalog from 30 to 60+ products
+3. **Price alert push notifications**: Real-time push when wishlist target hit
+4. **Smart bundle purchase**: Let users add entire bundle to wishlist/cart in one click
+5. **Spending goals**: Let users set monthly budget and track progress
+6. **Product detail page**: Expandable full product view with all specs, reviews, price history
+7. **Social features**: Share comparisons/wishlist with friends
+8. **Multi-user support**: Allow switching between different user profiles
