@@ -277,3 +277,80 @@ App was stable and fully functional from previous rounds. All 8 views, 11 agents
 6. **More products in catalog**: Expand from 30 to 60+ products across more subcategories
 7. **Spending tracker**: Add a monthly spending visualization to Insights based on "purchased" recommendations
 8. **Export insights to PDF**: Use pdf skill to generate a downloadable shopping intelligence report
+
+---
+Task ID: 9 (cron webDevReview round 2)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + AI Verdict + sparklines + LLM coach tips + styling polish
+
+## Current Project Status Assessment
+App stable from round 1. 9 views (Chat, Discover, Wishlist, Memory, Digital Twin, Coach, Timeline, Insights, Settings), 11 agents, MARE/AHDE/DPT working. Demo user: Student Shopper, twin confidence 30%. Lint clean, dev server healthy, no runtime errors. Round 1 added: Compare modal/tray, Voice input (ASR), Shopping Coach view, styling polish (card-lift, shimmer, gradient accents).
+
+## Work Completed This Round
+
+### QA Testing
+- Tested all views via agent-browser — all functional
+- Verified mobile responsiveness, AHDE routing, MARE scoring
+- No bugs found — app stable
+
+### New Feature 1: AI Verdict in Compare Modal (LLM-powered)
+- **Backend**: Created `src/app/api/compare/verdict/route.ts` — takes compared products, uses LLM to generate a decisive verdict with winner, reasoning, bestFor, runnerUp
+- **Frontend**: Added verdict fetching (useEffect on modal open with 2+ items) + AI Verdict banner at top of compare modal:
+  - Gold crown icon (animated spinner during loading)
+  - "AI VERDICT" label + Winner badge
+  - 2-3 sentence verdict paragraph
+  - Reasoning chips (emerald, with checkmarks)
+  - "Best for" + "Runner-up" footer
+  - Shimmer loading state
+- Verified: LLM picked Lenovo IdeaPad Gaming 3 as winner with "Better value for gaming with superior specs, though MacBook offers better battery and display quality" + 4 reasoning chips
+
+### New Feature 2: Price History Sparklines
+- **Backend**: Created `src/app/api/compare/prices/route.ts` — fetches price history for multiple products, grouped by platform
+- **Frontend**: Created `src/components/common/sparkline.tsx` — inline SVG sparkline with trend-based color (falling=emerald, rising=rose, stable=muted), area fill gradient, end-point dot
+- Created `src/hooks/use-price-history.ts` — fetches price history for a single product
+- Added sparklines to:
+  1. **Compare modal Price Trend row** — shows 8-week sparkline + "8wk avg ₹X" for each product
+  2. **Recommendation card Price Intelligence section** — shows "8-wk trend" sparkline below the Low/Avg/High stats (fetches on card expand)
+- Verified via DOM: 2 sparklines (width=140, 2 paths each) render in compare modal; sparkline in recommendation card
+
+### New Feature 3: LLM-Powered Coach Tips
+- **Backend**: Created `src/app/api/coach/tips/route.ts` — fetches twin + recent activity, uses LLM to generate 4 personalized tips with title, body, icon, category, action, actionQuery + a summary
+- **Frontend**: Updated `src/components/views/coach-view.tsx`:
+  - Added useQuery to fetch LLM tips (enabled when twin loads, 1min staleTime)
+  - ICON_MAP maps LLM icon names → Lucide components (lightbulb, trending-down, etc.)
+  - COLOR_MAP maps LLM categories → color classes (spending=rose, saving=emerald, etc.)
+  - Falls back to rule-based tips if LLM fails
+  - Added loading state "AI generating…" with spinner
+  - Shows LLM summary in header (italic, truncated)
+- Verified: LLM generated 4 tips referencing actual twin values (87/100 price sensitivity, 100/100 comparison frequency, 90/100 discount preference, 85/100 tech adoption) + summary "You're a price-conscious, tech-savvy student"
+
+### Styling Polish
+- **AnimatedNumber component** (`src/components/common/animated-number.tsx`): counts up to target value with easeOutCubic, used in Insights KPI cards
+- **Insights KPI cards**: Now use AnimatedNumber for Products Compared, Total Saved (₹), Avg Shopping Score, Memory Count — numbers count up on load
+- **Pie chart**: Added stroke="var(--card)" strokeWidth=2 for cleaner segment separation; custom tooltip formatter showing "{value} recs"
+- **Notification bell**: Pulses when unreadCount > 0, badge has ring-2 ring-background + shadow for better visibility
+- VLM confirmed: "clean dark-mode UI with sharp typography, clear data visualization, professional layout"
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200), no runtime errors
+- AI Verdict: tested with 2 products, LLM returned winner + reasoning + bestFor + runnerUp
+- Sparklines: DOM-verified 2 sparklines in compare modal (width=140, 2 paths each)
+- LLM Coach tips: VLM-verified "dynamically anchored to specific behavioral metrics derived from Digital Twin"
+- All features work end-to-end
+
+## Unresolved Issues / Risks
+- Sparklines are small SVGs — VLM sometimes doesn't recognize them in screenshots (but DOM verification confirms rendering)
+- AI Verdict adds ~1-2s latency to compare modal open (LLM call) — acceptable
+- LLM Coach tips add ~3-5s latency on first coach view load — acceptable (cached for 1 min)
+- Voice input still requires physical microphone (headless shows graceful error)
+
+## Priority Recommendations for Next Phase
+1. **Web search integration**: Use web-search skill to fetch real-time product info, news, reviews for recommendations
+2. **Image-based product search**: Use VLM skill to let users upload a product image and find visually similar products
+3. **Comparison "price prediction"**: Add LLM-powered "should I buy now or wait?" advice in compare modal
+4. **Spending tracker**: Add monthly spending visualization to Insights based on "purchased" recommendations
+5. **Export insights to PDF**: Use pdf skill to generate downloadable shopping intelligence report
+6. **More products**: Expand catalog from 30 to 60+ products
+7. **Conversation memory timeline**: Visualize how twin evolved over time in Digital Twin view
+8. **Smart bundle recommendations**: "People who bought this also bought" feature

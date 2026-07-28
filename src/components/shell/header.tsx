@@ -113,9 +113,9 @@ export function Header() {
                 className="relative h-9 w-9"
                 aria-label="Notifications"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className={`h-5 w-5 ${unreadCount > 0 ? 'animate-pulse' : ''}`} />
                 {unreadCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 grid min-h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 grid min-h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-background shadow-md">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}

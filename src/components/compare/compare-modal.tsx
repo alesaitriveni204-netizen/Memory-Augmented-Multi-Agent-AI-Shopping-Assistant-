@@ -5,9 +5,18 @@ import { useAppStore, type CompareItem } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle } from 'lucide-react'
+import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle, Sparkles, Loader2, Crown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { platformLabel, formatINR, scoreColor } from '@/lib/ui-utils'
+import { Sparkline } from '@/components/common/sparkline'
+
+interface Verdict {
+  winner: string
+  verdict: string
+  reasoning: string[]
+  bestFor: string
+  runnerUp: string
+}
 
 export function CompareModal() {
   const items = useAppStore((s) => s.compareItems)
@@ -15,6 +24,37 @@ export function CompareModal() {
   const setOpen = useAppStore((s) => s.setCompareOpen)
   const removeFromCompare = useAppStore((s) => s.removeFromCompare)
   const clearCompare = useAppStore((s) => s.clearCompare)
+
+  const [verdict, setVerdict] = React.useState<Verdict | null>(null)
+  const [verdictLoading, setVerdictLoading] = React.useState(false)
+  const [priceHistories, setPriceHistories] = React.useState<Record<string, Array<{ platform: string; series: Array<{ date: string; price: number }> }>>>({})
+
+  // Fetch price histories for sparklines
+  React.useEffect(() => {
+    if (!open || items.length === 0) {
+      setPriceHistories({})
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/compare/prices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productIds: items.map((i) => i.productId) }),
+        })
+        const data = await res.json()
+        if (!cancelled && res.ok && data.histories) {
+          setPriceHistories(data.histories)
+        }
+      } catch {
+        /* swallow */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, items])
 
   // Find the "winner" for each metric
   const lowestPrice = items.length > 0 ? Math.min(...items.map((i) => i.bestPrice)) : 0
@@ -29,6 +69,37 @@ export function CompareModal() {
     items.forEach((i) => i.specs && Object.keys(i.specs).forEach((k) => keys.add(k)))
     return Array.from(keys)
   }, [items])
+
+  // Fetch AI Verdict when modal opens with 2+ items
+  React.useEffect(() => {
+    if (!open || items.length < 2) {
+      setVerdict(null)
+      return
+    }
+    let cancelled = false
+    setVerdictLoading(true)
+    setVerdict(null)
+    ;(async () => {
+      try {
+        const res = await fetch('/api/compare/verdict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ products: items }),
+        })
+        const data = await res.json()
+        if (!cancelled && res.ok) {
+          setVerdict(data)
+        }
+      } catch {
+        /* swallow */
+      } finally {
+        if (!cancelled) setVerdictLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, items])
 
   if (!open) return null
 
@@ -91,6 +162,59 @@ export function CompareModal() {
           ) : (
             <ScrollArea className="flex-1">
               <div className="p-4 md:p-6">
+                {/* AI Verdict Banner */}
+                {(verdictLoading || verdict) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent p-4 md:p-5"
+                  >
+                    <div className="absolute -top-6 -right-6 h-24 w-24 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+                    <div className="relative flex items-start gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/30">
+                        {verdictLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Crown className="h-5 w-5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {verdictLoading ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                              <span className="text-sm font-semibold">AI Verdict Agent is analyzing…</span>
+                            </div>
+                            <div className="h-3 w-3/4 rounded asos-shimmer" />
+                            <div className="h-3 w-1/2 rounded asos-shimmer" />
+                          </div>
+                        ) : verdict ? (
+                          <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">AI Verdict</span>
+                              <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px]">
+                                <Crown className="h-2.5 w-2.5 mr-0.5" /> Winner: {verdict.winner}
+                              </Badge>
+                            </div>
+                            <p className="mt-1.5 text-sm leading-relaxed">{verdict.verdict}</p>
+                            {verdict.reasoning?.length > 0 && (
+                              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                {verdict.reasoning.map((r, i) => (
+                                  <span key={i} className="inline-flex items-center gap-1 text-[11px] rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 border border-emerald-500/20">
+                                    <Check className="h-2.5 w-2.5" /> {r}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {verdict.bestFor && (
+                              <div className="mt-2 text-[11px] text-muted-foreground">
+                                <span className="font-semibold">Best for:</span> {verdict.bestFor}
+                                {verdict.runnerUp && <> · <span className="font-semibold">Runner-up:</span> {verdict.runnerUp}</>}
+                              </div>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Product header cards row */}
                 <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: colTemplate }}>
                   <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-end pb-2">
@@ -185,15 +309,31 @@ export function CompareModal() {
                   <CompareRow label="Price Trend" icon={<TrendingUp className="h-3.5 w-3.5" />} colTemplate={colTemplate}>
                     {items.map((item) => {
                       const trend = item.priceAdvice?.trend ?? 'stable'
+                      const hist = priceHistories[item.productId]
+                      // Use the best platform's price series for the sparkline
+                      const bestSeries = hist?.find((h) => h.platform === item.bestPlatform)?.series
+                      const sparkData = bestSeries?.map((p) => p.price) ?? []
                       return (
                         <CompareCell key={item.productId}>
-                          <div className="flex items-center gap-1.5">
-                            {trend === 'falling' ? (
-                              <><TrendingDown className="h-4 w-4 text-emerald-500" /><span className="text-xs text-emerald-500 font-medium">Falling</span></>
-                            ) : trend === 'rising' ? (
-                              <><TrendingUp className="h-4 w-4 text-rose-500" /><span className="text-xs text-rose-500 font-medium">Rising</span></>
-                            ) : (
-                              <><Minus className="h-4 w-4 text-muted-foreground" /><span className="text-xs text-muted-foreground">Stable</span></>
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                              {trend === 'falling' ? (
+                                <span className="flex items-center gap-1.5"><TrendingDown className="h-4 w-4 text-emerald-500" /><span className="text-xs text-emerald-500 font-medium">Falling</span></span>
+                              ) : trend === 'rising' ? (
+                                <span className="flex items-center gap-1.5"><TrendingUp className="h-4 w-4 text-rose-500" /><span className="text-xs text-rose-500 font-medium">Rising</span></span>
+                              ) : (
+                                <span className="flex items-center gap-1.5"><Minus className="h-4 w-4 text-muted-foreground" /><span className="text-xs text-muted-foreground">Stable</span></span>
+                              )}
+                              {item.priceAdvice && (
+                                <span className="text-[10px] text-muted-foreground ml-auto">
+                                  8wk avg ₹{item.priceAdvice.avgPrice.toLocaleString('en-IN')}
+                                </span>
+                              )}
+                            </div>
+                            {sparkData.length >= 2 && (
+                              <div className="text-emerald-500/80">
+                                <Sparkline data={sparkData} width={140} height={28} />
+                              </div>
                             )}
                           </div>
                         </CompareCell>

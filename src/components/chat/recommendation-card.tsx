@@ -26,6 +26,8 @@ import {
 import { ProductVisual } from '@/components/common/product-visual'
 import { ScoreRing } from '@/components/common/score-ring'
 import { ScoreBars } from '@/components/common/score-bars'
+import { Sparkline } from '@/components/common/sparkline'
+import { usePriceHistory } from '@/hooks/use-price-history'
 import {
   formatINR,
   platformColor,
@@ -50,6 +52,9 @@ export function RecommendationCard({
   const compareItems = useAppStore((s) => s.compareItems)
   const setCompareOpen = useAppStore((s) => s.setCompareOpen)
   const inCompare = compareItems.some((x) => x.productId === rec.productId)
+
+  // Fetch price history when card is expanded
+  const priceSeries = usePriceHistory(rec.productId, open)
 
   async function addToWishlist() {
     setAdding(true)
@@ -376,6 +381,14 @@ export function RecommendationCard({
                         </div>
                       </div>
                     </div>
+                    {priceSeries.length >= 2 && (
+                      <div className="mt-2 flex items-center gap-2 rounded bg-background/60 px-2 py-1.5">
+                        <div className="text-[9px] text-muted-foreground shrink-0">8-wk trend</div>
+                        <div className="flex-1 text-emerald-500/80">
+                          <Sparkline data={priceSeries} width={200} height={24} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

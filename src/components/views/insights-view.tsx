@@ -29,6 +29,7 @@ import {
 } from 'recharts'
 import { Badge } from '@/components/ui/badge'
 import { LoadingState } from '@/components/common/empty-state'
+import { AnimatedNumber } from '@/components/common/animated-number'
 import {
   formatINR,
   platformColor,
@@ -69,6 +70,7 @@ export function InsightsView() {
   const kpis = [
     {
       label: 'Products Compared',
+      rawValue: data.totalProductsCompared,
       value: data.totalProductsCompared.toString(),
       icon: Package,
       color: '#10b981',
@@ -77,6 +79,7 @@ export function InsightsView() {
     },
     {
       label: 'Total Saved',
+      rawValue: data.totalSaved,
       value: formatINR(data.totalSaved),
       icon: Wallet,
       color: '#14b8a6',
@@ -85,6 +88,7 @@ export function InsightsView() {
     },
     {
       label: 'Avg Shopping Score',
+      rawValue: Math.round(data.avgShoppingScore),
       value: `${Math.round(data.avgShoppingScore)}/100`,
       icon: Star,
       color: '#f59e0b',
@@ -93,6 +97,7 @@ export function InsightsView() {
     },
     {
       label: 'Memory Count',
+      rawValue: data.memoryCount,
       value: data.memoryCount.toString(),
       icon: Brain,
       color: '#a855f7',
@@ -160,7 +165,15 @@ export function InsightsView() {
                   </Badge>
                 )}
               </div>
-              <div className="mt-2 text-xl font-bold">{kpi.value}</div>
+              <div className="mt-2 text-xl font-bold">
+                {kpi.label === 'Avg Shopping Score' ? (
+                  <><AnimatedNumber value={kpi.rawValue} duration={1000} format={(n) => Math.round(n).toString()} />/100</>
+                ) : kpi.label === 'Total Saved' ? (
+                  <>₹<AnimatedNumber value={kpi.rawValue} duration={1000} format={(n) => Math.round(n).toLocaleString('en-IN')} /></>
+                ) : (
+                  <AnimatedNumber value={kpi.rawValue} duration={1000} format={(n) => Math.round(n).toLocaleString('en-IN')} />
+                )}
+              </div>
               <div className="text-[11px] text-muted-foreground">
                 {kpi.label}
               </div>
@@ -269,7 +282,7 @@ export function InsightsView() {
                     paddingAngle={2}
                   >
                     {pieData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
+                      <Cell key={idx} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -279,6 +292,7 @@ export function InsightsView() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
+                    formatter={(value: number, name: string) => [`${value} recs`, name]}
                   />
                   <Legend
                     iconType="circle"

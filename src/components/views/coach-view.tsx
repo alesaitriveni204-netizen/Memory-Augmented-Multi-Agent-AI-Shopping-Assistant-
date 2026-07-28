@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Brain,
   Zap,
+  Star,
+  Loader2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +26,30 @@ import { Progress } from '@/components/ui/progress'
 import { useAppStore } from '@/lib/store'
 import { PERSONA_LABELS } from '@/lib/types'
 import { toast } from 'sonner'
+
+// Map LLM-returned icon names to Lucide components
+const ICON_MAP = {
+  lightbulb: Lightbulb,
+  'trending-down': TrendingDown,
+  'trending-up': TrendingUp,
+  target: Target,
+  'piggy-bank': PiggyBank,
+  clock: Clock,
+  award: Award,
+  sparkles: Sparkles,
+  zap: Zap,
+  brain: Brain,
+  star: Star,
+}
+
+// Map LLM-returned categories to color classes
+const COLOR_MAP = {
+  spending: 'bg-rose-500/15 text-rose-500',
+  saving: 'bg-emerald-500/15 text-emerald-500',
+  habits: 'bg-amber-500/15 text-amber-500',
+  discovery: 'bg-teal-500/15 text-teal-500',
+  quality: 'bg-purple-500/15 text-purple-500',
+}
 
 interface TwinResponse {
   twin: DigitalTwinData | null
@@ -68,8 +94,34 @@ export function CoachView() {
   const persona = data?.personaCluster ? PERSONA_LABELS[data.personaCluster] : null
   const confidence = data?.confidence ?? 0
 
-  // Generate coaching tips based on twin traits
-  const tips = React.useMemo(() => generateTips(twin, user?.name), [twin, user?.name])
+  // Fetch LLM-powered coaching tips
+  const { data: llmTipsData, isLoading: tipsLoading } = useQuery<{
+    tips: Array<{ title: string; body: string; icon: string; category: string; action?: string; actionQuery?: string }>;
+    summary: string;
+  }>({
+    queryKey: ['coach-tips', confidence],
+    queryFn: async () => {
+      const res = await fetch('/api/coach/tips', { method: 'POST' })
+      return res.json()
+    },
+    enabled: !!twin,
+    staleTime: 60 * 1000, // 1 min
+  })
+
+  // Use LLM tips if available, otherwise fall back to rule-based
+  const tips = React.useMemo(() => {
+    if (llmTipsData?.tips && llmTipsData.tips.length > 0) {
+      return llmTipsData.tips.map((t) => ({
+        title: t.title,
+        body: t.body,
+        icon: ICON_MAP[t.icon as keyof typeof ICON_MAP] ?? Lightbulb,
+        color: COLOR_MAP[t.category as keyof typeof COLOR_MAP] ?? 'bg-amber-500/15 text-amber-500',
+        action: t.action,
+        actionQuery: t.actionQuery,
+      }))
+    }
+    return generateTips(twin, user?.name)
+  }, [llmTipsData, twin, user?.name])
 
   // Generate smart goals
   const goals = React.useMemo(() => generateGoals(twin), [twin])
@@ -157,6 +209,16 @@ export function CoachView() {
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-amber-500" />
           <h2 className="text-sm font-semibold uppercase tracking-wider">Personalized Tips</h2>
+          {tipsLoading && (
+            <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> AI generating…
+            </span>
+          )}
+          {llmTipsData?.summary && !tipsLoading && (
+            <span className="ml-auto text-[10px] text-muted-foreground italic truncate max-w-[200px] hidden sm:block" title={llmTipsData.summary}>
+              {llmTipsData.summary}
+            </span>
+          )}
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {tips.map((tip, i) => (
