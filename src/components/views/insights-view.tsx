@@ -227,8 +227,8 @@ export function InsightsView() {
                   <YAxis
                     type="category"
                     dataKey="brand"
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                    width={70}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
+                    width={90}
                   />
                   <Tooltip
                     contentStyle={{

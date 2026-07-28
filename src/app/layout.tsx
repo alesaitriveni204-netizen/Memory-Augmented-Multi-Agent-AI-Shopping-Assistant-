@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "AI Shopping OS" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.png",
   },
 };
 

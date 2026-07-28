@@ -293,10 +293,11 @@ export function DigitalTwinView() {
         <div className="rounded-xl border border-border/60 bg-card p-4">
           <div className="text-sm font-semibold mb-3">Trait Breakdown</div>
           <div className="space-y-2.5 max-h-72 overflow-y-auto scrollbar-thin pr-1">
-            {TRAIT_LABELS.map((t) => {
+            {TRAIT_LABELS.map((t, idx) => {
               const v = Math.round((twin[t.key] as number) || 0)
-              const color =
-                v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444'
+              // Use a consistent emerald/teal palette — these are descriptive traits, not good/bad
+              const palette = ['#10b981', '#14b8a6', '#06b6d4', '#0d9488', '#059669', '#0ea5e9', '#0891b2', '#0d9488', '#10b981']
+              const color = palette[idx % palette.length]
               return (
                 <div key={t.key}>
                   <div className="flex items-center justify-between text-[11px] mb-1">

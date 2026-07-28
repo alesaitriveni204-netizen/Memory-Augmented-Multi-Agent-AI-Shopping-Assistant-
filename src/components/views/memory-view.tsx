@@ -98,7 +98,9 @@ export function MemoryView() {
     queryKey: ['memory'],
     queryFn: async () => {
       const res = await fetch('/api/memory')
-      return res.json()
+      const json = await res.json()
+      // API returns { memories: { short_term: [], ... }, total }
+      return (json.memories ?? json) as ApiMemoryResponse
     },
   })
 

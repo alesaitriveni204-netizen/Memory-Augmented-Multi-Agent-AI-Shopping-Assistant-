@@ -155,8 +155,8 @@ export function OnboardingWizard() {
           >
             {step === 0 && (
               <div className="text-center space-y-4">
-                <div className="grid h-16 w-16 mx-auto place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
-                  <Sparkles className="h-8 w-8" />
+                <div className="relative h-20 w-20 mx-auto overflow-hidden rounded-2xl shadow-lg ring-2 ring-emerald-500/20">
+                  <img src="/logo.png" alt="AI Shopping OS" className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">

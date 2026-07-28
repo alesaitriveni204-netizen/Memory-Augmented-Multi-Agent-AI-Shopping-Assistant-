@@ -71,8 +71,8 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center gap-3 px-3 md:px-6">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shrink-0">
-            <Sparkles className="h-5 w-5" />
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 ring-emerald-500/20">
+            <img src="/logo.png" alt="AI Shopping OS logo" className="h-full w-full object-cover" />
           </div>
           <div className="min-w-0 hidden sm:block">
             <div className="text-sm font-bold leading-tight tracking-tight">
