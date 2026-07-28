@@ -1,0 +1,213 @@
+// AI Shopping OS — Prisma schema
+// Memory-Augmented Multi-Agent Cross-Platform Shopping Intelligence Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// USER, PERSONA, DIGITAL TWIN
+// ────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  // Onboarding questionnaire (JSON)
+  onboarding      String?  // { categories, budget, brands, platforms, frequency, discountImportance, deliverySpeed, techFamiliarity, lifestyle }
+  personaCluster  String?  // DPT cluster: budget-conscious | premium | student | fashion | family | techie
+  twinConfidence  Int      @default(0) // 0-100, how accurate the DToC is
+  // Digital Twin of the Customer (DToC) — evolving behavioral representation (JSON)
+  digitalTwin     String?  // { shoppingStyle, budgetFlexibility, brandLoyalty, priceSensitivity, ... }
+  // AI Shopping Score baseline
+  memoryEnabled   Boolean  @default(true)
+  personalizationEnabled Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  memories        Memory[]
+  wishlist        WishlistItem[]
+  chatMessages    ChatMessage[]
+  notifications   Notification[]
+  timelineEvents  TimelineEvent[]
+  connectedAccounts ConnectedAccount[]
+  recommendations  Recommendation[]
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// MEMORY SYSTEM (Short-term, Long-term, Episodic, Semantic, Session, Working)
+// ────────────────────────────────────────────────────────────────────────────
+
+model Memory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // short_term | long_term | episodic | semantic | session | working
+  category    String   // brand | budget | category | platform | payment | delivery | preference | event | habit
+  key         String   // e.g. "preferred_brand", "budget_range", "first_laptop_purchase"
+  value       String   // e.g. "Lenovo", "80000", "MacBook Air for college"
+  confidence  Int      @default(50) // 0-100
+  weight      Float    @default(1.0) // decay multiplier
+  source      String   @default("inferred") // explicit | inferred | onboarding | purchase | search | feedback
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastAccessed DateTime @default(now())
+
+  @@index([userId, type])
+  @@index([userId, category])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// PRODUCT CATALOG (normalized cross-platform)
+// ────────────────────────────────────────────────────────────────────────────
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  brand         String
+  category      String   // laptop | phone | earbuds | tv | watch | camera | appliance | fashion | beauty | home
+  subcategory   String?
+  // Specifications (JSON)
+  specs         String   // { ram, storage, processor, gpu, display, battery, weight, ... }
+  // Base list price
+  basePrice     Int
+  rating        Float    @default(4.2)
+  reviewCount   Int      @default(0)
+  imageColor    String   @default("#10b981") // for placeholder visual
+  // Review summary (precomputed mock)
+  pros          String?  // JSON array
+  cons          String?  // JSON array
+  sentimentScore Float   @default(0.7) // -1 to 1
+  tags          String?  // JSON array
+  createdAt     DateTime @default(now())
+
+  platformPrices PlatformPrice[]
+  priceHistory   PriceHistory[]
+  wishlistItems  WishlistItem[]
+  recommendations Recommendation[]
+}
+
+// One product → many platform prices (Amazon, Flipkart, Myntra, Croma, etc.)
+model PlatformPrice {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  platform    String   // amazon | flipkart | myntra | croma | reliance | nykaa | ajio | tatacliq | meesho
+  price       Int
+  mrp         Int
+  discount    Int      @default(0) // percent
+  deliveryDays Int     @default(3)
+  inStock     Boolean  @default(true)
+  seller      String   @default("Verified Seller")
+  warranty    String?  // "1 year" | "6 months" etc
+  url         String?
+  updatedAt   DateTime @default(now())
+
+  @@index([productId, platform])
+}
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  platform    String
+  price       Int
+  recordedAt  DateTime @default(now())
+
+  @@index([productId, platform])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CHAT, RECOMMENDATIONS, EXPLANATIONS
+// ────────────────────────────────────────────────────────────────────────────
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String   // user | assistant
+  content     String
+  // Structured metadata (JSON): intent, agentsUsed, complexity, shoppingScore
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Recommendation {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  // Shopping Score breakdown (JSON)
+  shoppingScore Int     @default(0) // 0-100
+  scoreBreakdown String? // { preference, price, review, spec, twinCompat, memory, context, availability }
+  explanation   String   // natural-language "why this product"
+  intent        String?  // what user asked for
+  status        String   @default("shown") // shown | saved | purchased | ignored
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// WISHLIST, TIMELINE, NOTIFICATIONS, CONNECTED ACCOUNTS
+// ────────────────────────────────────────────────────────────────────────────
+
+model WishlistItem {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  targetPrice  Int?     // price drop alert threshold
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model TimelineEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // search | recommendation | wishlist | purchase | comparison | price_drop | memory_update | twin_update
+  title       String
+  description String?
+  productId   String?
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // price_drop | back_in_stock | better_alternative | festival_sale | warranty_expiring | recommendation
+  title       String
+  message     String
+  productId   String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model ConnectedAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform    String   // amazon | flipkart | myntra | croma | reliance | nykaa | ajio
+  connected   Boolean  @default(true)
+  connectedAt DateTime @default(now())
+
+  @@unique([userId, platform])
+}

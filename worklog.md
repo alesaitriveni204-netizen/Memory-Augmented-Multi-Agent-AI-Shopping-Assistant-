@@ -1,0 +1,127 @@
+# AI Shopping OS — Project Worklog
+
+## Project Overview
+Building **AI Shopping OS** — a Memory-Augmented Multi-Agent Cross-Platform Shopping Intelligence Platform based on the uploaded PRD.docx (20 chapters). Implemented as a Next.js 16 single-page web app (only `/` route visible) with tab-based navigation.
+
+## Architecture Decisions
+- **Stack**: Next.js 16 (App Router) + TypeScript + Tailwind 4 + shadcn/ui + Prisma (SQLite) + z-ai-web-dev-sdk (LLM)
+- **Accent color**: Emerald/teal (no indigo/blue per design rules)
+- **Single page app**: `/` route only; sidebar tabs switch views (Chat, Discover, Wishlist, Memory, Digital Twin, Timeline, Insights, Settings)
+- **Mock product catalog**: Seeded dataset of ~70 products across categories with multi-platform prices (simulates Amazon/Flipkart/Myntra/Croma/Reliance/Nykaa/Ajio connectors)
+- **Multi-agent system**: Orchestrator + 9 specialized agents, all powered by z-ai-web-dev-sdk LLM with structured prompts
+- **AHDE**: Decision layer that selects which agents to run based on query complexity
+- **MARE**: Memory-Augmented Recommendation Engine — fuses product/user/memory/twin/context features into Shopping Score
+
+---
+Task ID: 1
+Agent: main (orchestrator)
+Task: Foundation — Prisma schema, seed catalog, db utils, shared types
+
+Work Log:
+- Designed full data model covering all PRD components
+- (in progress)
+
+Stage Summary:
+- Prisma schema written with 11 models: User, Memory, Product, PlatformPrice, PriceHistory, ChatMessage, Recommendation, WishlistItem, TimelineEvent, Notification, ConnectedAccount
+- Schema pushed to SQLite (db/custom.db)
+- Mock product catalog of 30 products seeded across 10 categories (laptop, phone, earbuds, tv, watch, camera, appliance, fashion, beauty, home), each with 2-4 platform prices + 8 weeks price history
+- Shared types defined in src/lib/types.ts (PersonaCluster, Platform, DigitalTwin, OnboardingData, AhdePlan, RecommendationResult, etc.)
+- LLM helper (src/lib/llm.ts) using z-ai-web-dev-sdk with llmChat + llmJson
+- Persona clustering (src/lib/persona.ts): 6 clusters, buildInitialTwin + evolveTwin
+- MARE scoring engine (src/lib/scoring.ts): 8-factor Shopping Score with category-weighted fusion + explanation generator
+- Multi-agent system (src/lib/agents.ts): intentAgent, ahde, searchAgent, memoryAgent (+ update), digitalTwinAgent (+ evolve), recommendationAgent, reviewAgent, priceAgent, budgetAgent, explainabilityAgent, cartAgent, generateNotificationsForUser
+- Session helper (src/lib/session.ts): single demo user
+
+Next tasks (parallel subagents):
+- Task 2: Backend API routes (/api/chat, /api/onboarding, /api/memory, /api/digital-twin, /api/wishlist, /api/timeline, /api/notifications, /api/products, /api/insights, /api/accounts)
+- Task 4: Frontend app shell + onboarding + chat interface
+- Task 5: Frontend dashboard views (Memory, Digital Twin, Wishlist, Timeline, Insights, Settings)
+
+---
+Task ID: 3
+Agent: full-stack-developer (backend API routes)
+Task: Build all backend API routes for AI Shopping OS
+
+Work Log:
+- Read prior worklog + inspected prisma schema, lib/agents.ts, lib/persona.ts, lib/scoring.ts, lib/session.ts, lib/types.ts to confirm signatures and types
+- Created 16 route files under src/app/api/ covering all 17 specified endpoints (some endpoints share a file)
+- Routes implemented:
+  1. /api/init (GET) — bootstraps demo user, returns hasOnboarded flag
+  2. /api/onboarding (POST) — clusters persona, builds initial DToC, seeds 6 long_term memories, connects platforms, creates timeline event
+  3. /api/chat (POST) — main orchestrator: intent → AHDE → parallel agents (memory/search/budget/recommendation/price top-3) → explainability → persist ChatMessages + Recommendation records + TimelineEvent; async memory/twin evolution
+  4. /api/chat/history (GET) — last 50 messages with parsed metadata
+  5. /api/memory (GET/POST/PATCH/DELETE) — grouped by type, full CRUD with user ownership check
+  6. /api/memory/[id] (DELETE/PATCH) — Next.js 16 async params
+  7. /api/digital-twin (GET/POST) — load + history; actions: reset/disable/enable/update (merges partial twin)
+  8. /api/wishlist (GET/POST) — upsert on (userId,productId), creates TimelineEvent, runs generateNotificationsForUser
+  9. /api/wishlist/[id] (DELETE/PATCH)
+  10. /api/timeline (GET) — last 100 events, ?type= filter
+  11. /api/notifications (GET/POST) — refresh+list, mark_read single or all
+  12. /api/products (GET) — filters (category, brand, search, limit), includes platformPrices + last 8 priceHistory
+  13. /api/products/[id] (GET) — full product with parsed pros/cons/specs/tags
+  14. /api/insights (GET) — totalProductsCompared, totalSaved, avgShoppingScore, topCategories, topBrands, platformUsage, memoryCount, twinConfidence, priceHistoryTrend (ISO week buckets), recentActivity (last 7 timeline events)
+  15. /api/accounts (GET/POST/DELETE) — platform connect/disconnect
+  16. /api/recommendations (GET) — last 30 with ?status= filter
+  17. /api/recommendations/[id] (PATCH) — status update with side effects: saved → wishlist upsert + timeline; purchased → episodic memory + timeline + twin evolution (purchaseConfidence +3, shoppingConsistency +2, brand/category reinforcement); ignored → timeline
+- All routes use `export const runtime = "nodejs"` and `export const dynamic = "force-dynamic"`
+- All routes use try/catch around DB ops + JSON body parsing, return NextResponse.json with 500 on errors
+- Smoke-tested every endpoint against live dev server (port 3000): init, onboarding, chat (full multi-agent flow returned recommendations with shopping scores), chat/history, memory CRUD, digital-twin update/disable/enable, wishlist POST/PATCH, timeline filter, notifications mark_read, accounts POST/DELETE, recommendations GET + PATCH (saved + purchased both updated twin), insights, products list + detail
+- Reset demo user back to clean state (no onboarding) for downstream frontend tasks
+- `bun run lint` passes with zero errors/warnings
+
+Stage Summary:
+- 17 backend API endpoints shipped across 16 route files, all Next.js 16 App Router route handlers
+- Main orchestrator (/api/chat) wires together intentAgent → ahde → parallel agents (memory/search/budget/recommendation) → priceAgent top-3 → explainabilityAgent, persists ChatMessage + Recommendation records + TimelineEvent, fires async memory+Twin evolution
+- Full CRUD for memory, wishlist, accounts, recommendations with user-scoped ownership checks
+- Insights endpoint computes 10 aggregated analytics (counts, savings, groupBys, weekly price trend) using in-memory aggregation over Prisma includes (Prisma groupBy used where applicable)
+- Recommendation PATCH side-effects correctly evolve Digital Twin on purchase (purchaseConfidence +3, brand/category reinforcement, twinConfidence +3) and create episodic memory
+- All endpoints verified working end-to-end via curl smoke tests
+- ESLint clean, no TypeScript errors
+- Demo user reset to clean state for Tasks 4 and 5 to onboard fresh
+
+---
+Task ID: 4+5
+Agent: full-stack-developer (frontend SPA)
+Task: Build complete frontend single-page app for AI Shopping OS
+
+Work Log:
+- Read prior worklog (Task 1: foundation; Task 3: 17 backend endpoints shipped) + inspected src/lib/types.ts, src/app/api/chat/route.ts, src/app/api/chat/history/route.ts to align frontend types with API response shapes
+- Initialized fullstack environment (curl init script)
+- Updated src/app/globals.css: emerald/teal primary theme tokens for light + dark, custom `.scrollbar-thin` webkit + Firefox scrollbar styling, `.asos-dot` bounce animation for chat loading, `.asos-gradient-text` helper
+- Created src/components/providers.tsx (client) wrapping children with next-themes ThemeProvider (default dark) + TanStack QueryClientProvider (30s staleTime, no refetchOnWindowFocus) + Sonner Toaster
+- Updated src/app/layout.tsx: wrapped children in <Providers>, kept existing Toaster, set metadata title to "AI Shopping OS — Memory-Augmented Shopping Intelligence"
+- Created src/lib/store.ts: Zustand store with user state, activeView navigation (8 views), chatMessages + chatLoading, pendingChatInput (for "Ask AI" handoff from Discover), notifications + unreadCount, mobileNavOpen, notifOpen
+- Created src/lib/ui-utils.ts: ALL_PLATFORMS / ALL_CATEGORIES / ALL_BRANDS constants, platformColor / platformLabel / formatINR (en-IN currency) / scoreColor / confidenceColor / relativeTime / parseSpecs / parseJsonArray / downloadJson helpers
+- Built App Shell (src/app/page.tsx): min-h-screen flex flex-col root, sticky Header at top, Sidebar (desktop md+) + main content area with AnimatePresence view transitions, BottomNav (mobile md:hidden) with safe-area-inset bottom padding, mt-auto sticky Footer showing persona status. Boots by parallel-fetching /api/init + /api/chat/history + /api/notifications. Auto-sends a welcome chat message on first onboarding completion (localStorage flag). Onboarding gate replaces main content (but keeps header visible) when !user.hasOnboarded
+- Built Header (src/components/shell/header.tsx): logo with gradient emerald sparkle box + subtitle, persona cluster badge with emoji + label + twin confidence %, theme toggle (Sun/Moon via next-themes), notification bell popover with unread count badge + mark-read (single + all)
+- Built Sidebar + BottomNav (src/components/shell/sidebar.tsx): 8 nav items (Chat, Discover, Wishlist, Memory, Digital Twin, Timeline, Insights, Settings), emerald active state with right dot indicator, horizontal scroll bottom nav on mobile
+- Built Onboarding Wizard (src/components/onboarding/onboarding-wizard.tsx): 6-step wizard (Welcome → Categories → Budget → Brands & Platforms → Lifestyle → Create) with progress bar, motion-animated step transitions, multi-select chips for categories/brands/platforms, radio cards for budget, frequency toggle, 3 sliders (discount/delivery/tech familiarity), lifestyle textarea, summary screen, POST /api/onboarding, success screen with persona emoji + label. Final "Start Chatting" button switches to chat view
+- Built Chat View (src/components/views/chat-view.tsx): two-column grid (chat | agent activity panel on lg+), scrollable message list (absolute inset-0 overflow-y-auto scrollbar-thin), user messages right-aligned emerald bubble, assistant left-aligned muted bubble, loading state with bouncing dots "Agents thinking…", quick-suggestion chips on empty state, textarea input with send button (Enter to send, Shift+Enter newline), auto-scroll on new message + scroll-to-bottom button when scrolled up, normalizes intent field (string vs IntentResult object) for both fresh responses and chat-history-loaded messages
+- Built Recommendation Card (src/components/chat/recommendation-card.tsx): motion-animated card with ProductVisual (colored block + initial + brand label), ScoreRing SVG circular badge, best platform + best price + MRP strikethrough + discount %, rating + review count + delivery days, action buttons (Add to Wishlist via POST /api/wishlist, Compare → Ask AI, View on {platform} external link, Track Price), expandable "Why this?" section with explanation text + 8-bar ScoreBars breakdown + Pros/Cons chips + Specs grid + Price Intelligence block (trend arrow, advice, 8-wk low/avg/high)
+- Built Agent Activity Panel (src/components/chat/agent-activity-panel.tsx): intent badge + complexity color, model tier, AHDE decision reason, 11-agent grid showing required (green check) vs skipped (gray X) agents, data sources (cached/live), latency in seconds
+- Built Discover View (src/components/views/discover-view.tsx): TanStack Query fetches /api/products with debounce, search input + category filter chips, responsive product grid (1-4 cols), product cards with ProductVisual + best platform + best price + rating + "Ask AI" button that handoffs to chat via pendingChatInput
+- Built Wishlist View (src/components/views/wishlist-view.tsx): TanStack Query + mutations for delete + patch targetPrice, each item shows product info + best price + editable target price input + "Target hit!" badge when bestPrice ≤ targetPrice + set alert + view on platform
+- Built Memory Dashboard (src/components/views/memory-view.tsx): tabs by type (Long-term/Semantic/Episodic/Session/Short-term) with counts, search filter, memory cards with category/key/value/confidence slider/weight/source, inline edit value + confidence slider (PATCH /api/memory/[id]), delete with confirm, "Add Memory" dialog (type/category/key/value/confidence), "Memory Enabled" switch (POST /api/digital-twin enable/disable), Export JSON button, Reset All Memory with confirm (deletes all memories across types)
+- Built Digital Twin View (src/components/views/digital-twin-view.tsx): persona cluster card with emoji + color, twin confidence ScoreRing, "Reset Twin" button with confirm, "Personalization" switch, Recharts RadarChart with 9 trait axes (budgetFlexibility, brandLoyalty, priceSensitivity, purchaseConfidence, technologyAdoption, impulseBuyingScore, discountPreference, comparisonFrequency, shoppingConsistency), trait bars with color thresholds, preferred categories/brands/platforms chips, lifestyle, explainability callout, evolution history list
+- Built Timeline View (src/components/views/timeline-view.tsx): vertical timeline with dots, type filter chips, 10 event types with emoji icons (🔍 search, ✨ recommendation, ❤️ wishlist, 🛒 purchase, ⚖️ comparison, 📉 price_drop, 🧠 memory_update, 🔄 twin_update, 🚀 onboarding, 🔔 notification), metadata chips per event, relative time
+- Built Insights Dashboard (src/components/views/insights-view.tsx): 4 KPI cards (Products Compared, Total Saved, Avg Shopping Score, Memory Count) with trend badges, Recharts BarChart for Top Categories (vertical), Recharts BarChart for Top Brands, Recharts PieChart for Platform Usage with platform colors, Recharts LineChart for 8-week Price Trend, Recent Activity list
+- Built Settings View (src/components/views/settings-view.tsx): Connected Accounts section with 9 platform toggles (POST/DELETE /api/accounts), Personalization section with memoryEnabled + personalizationEnabled switches, Data & Privacy section with Export My Data (downloads JSON of user + memory + twin + wishlist + timeline) and Delete All My Data (confirm dialog → resets twin + deletes all memories + clears wishlist), About section with version + tech stack badges
+- Built common components: ProductVisual (colored gradient block with initial + brand label), ScoreRing (SVG circular progress with color thresholds), ScoreBars (8-factor bar chart), EmptyState + LoadingState
+- Ran `bun run lint` — zero errors/warnings
+- Verified dev server (port 3000) still healthy: GET / returns 200 in 36ms, GET /api/init returns clean demo user (not onboarded), no errors in dev.log
+- Confirmed boot flow: page loads → boots /api/init + /api/chat/history + /api/notifications in parallel → user not onboarded → OnboardingWizard renders
+
+Stage Summary:
+- 21 frontend files created/modified: 1 layout, 1 page (app shell), 1 globals.css, 1 providers, 1 store, 1 ui-utils, 2 shell components (header, sidebar+bottom-nav), 1 onboarding wizard, 8 view components, 2 chat components (recommendation-card, agent-activity-panel), 4 common components (product-visual, score-ring, score-bars, empty-state)
+- Complete single-page app with tab-based view switching via Zustand activeView (NO additional routes — only `/` exposed per spec)
+- Emerald/teal accent color throughout, deep slate/zinc dark theme, NO indigo or blue
+- Sticky footer (mt-auto) at bottom of viewport, bottom nav respects iOS safe-area-inset-bottom
+- Mobile-first responsive: sidebar collapses to scrollable bottom nav on mobile, all grids reflow
+- TanStack Query for server state (products, wishlist, memory, twin, timeline, insights, accounts), Zustand for client state (activeView, user, chatMessages, notifications)
+- All charts via Recharts (RadarChart for twin traits, BarChart for top categories/brands, PieChart for platform usage, LineChart for price trend)
+- Framer Motion for card entrance + view transitions
+- Sonner toast for user feedback (success/error/info)
+- date-fns equivalent relativeTime helper for human-readable timestamps
+- Custom scrollbar styling (.scrollbar-thin) applied to chat messages, memory lists, timeline, bottom nav
+- Onboarding auto-triggers welcome chat message after persona creation (localStorage guard prevents re-fire)
+- ESLint clean, dev server healthy, demo user remains in clean (not onboarded) state for the user to onboard fresh
