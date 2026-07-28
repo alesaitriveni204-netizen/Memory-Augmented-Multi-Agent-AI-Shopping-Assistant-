@@ -53,6 +53,7 @@ export function RecommendationCard({
   const addToCompare = useAppStore((s) => s.addToCompare)
   const compareItems = useAppStore((s) => s.compareItems)
   const setCompareOpen = useAppStore((s) => s.setCompareOpen)
+  const openProductDetail = useAppStore((s) => s.openProductDetail)
   const inCompare = compareItems.some((x) => x.productId === rec.productId)
 
   // Fetch price history when card is expanded
@@ -100,9 +101,13 @@ export function RecommendationCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-semibold text-sm leading-tight line-clamp-2">
+                <button
+                  onClick={() => openProductDetail(rec.productId)}
+                  className="font-semibold text-sm leading-tight line-clamp-2 text-left hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                  title="View product details"
+                >
                   {rec.name}
-                </div>
+                </button>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   <Badge variant="outline" className="text-[10px] py-0 px-1.5">
                     {rec.brand}

@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/common/empty-state'
 import { AnimatedNumber } from '@/components/common/animated-number'
 import { SpendingGoal } from '@/components/insights/spending-goal'
+import { SaleCalendar } from '@/components/insights/sale-calendar'
 import {
   formatINR,
   platformColor,
@@ -486,8 +487,11 @@ export function InsightsView() {
         </motion.div>
       )}
 
-      {/* Spending Goal */}
-      <SpendingGoal monthlySpent={data.spending?.byMonth?.[data.spending.byMonth.length - 1]?.spent ?? 0} />
+      {/* Spending Goal + Sale Calendar side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <SpendingGoal monthlySpent={data.spending?.byMonth?.[data.spending.byMonth.length - 1]?.spent ?? 0} />
+        <SaleCalendar />
+      </div>
 
       {/* Recent Activity */}
       <div className="rounded-xl border border-border/60 bg-card p-4">

@@ -34,6 +34,7 @@ import {
 import { ScoreRing } from '@/components/common/score-ring'
 import { EmptyState, LoadingState } from '@/components/common/empty-state'
 import { TwinEvolutionChart } from '@/components/digital-twin/twin-evolution-chart'
+import { TwinAnalysis } from '@/components/digital-twin/twin-analysis'
 import {
   platformColor,
   platformLabel,
@@ -388,6 +389,9 @@ export function DigitalTwinView() {
           <p className="text-sm">{twin.lifestyle}</p>
         </div>
       )}
+
+      {/* AI Personality Analysis */}
+      <TwinAnalysis />
 
       {/* Explainability callout */}
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">

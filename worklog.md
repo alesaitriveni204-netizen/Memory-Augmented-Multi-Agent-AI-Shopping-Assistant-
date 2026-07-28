@@ -833,3 +833,76 @@ App stable from round 8. 9 views, 11 agents, 58-product catalog, advanced sortin
 6. **Product detail from chat**: Click product names in chat to open detail modal
 7. **Advanced twin insights**: LLM-generated personality analysis
 8. **Seasonal sale calendar**: Festival sale tracker with countdown
+
+---
+Task ID: 17 (cron webDevReview round 10)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + Product detail from chat + Twin personality analysis + Sale calendar
+
+## Current Project Status Assessment
+App stable from round 9. 9 views, 11 agents, 58-product catalog, spending goals, wishlist bulk actions, advanced sorting/filters, export, image search, comparison history, smart bundles, product detail modal. Demo user: Student Shopper, twin confidence 61%. Lint clean, dev server healthy, no runtime errors.
+
+## Work Completed This Round
+
+### QA Testing
+- Tested chat, Digital Twin, Insights via agent-browser
+- Verified: 58 products loading, twin confidence 61%
+- No bugs found — app stable
+
+### New Feature 1: Product Detail from Chat (clickable product names)
+- Made product names in recommendation cards clickable buttons
+- Added `openProductDetail` from Zustand store to recommendation-card.tsx
+- Clicking a product name opens the Product Detail Modal with full specs, prices, reviews, similar products
+- Hover state: emerald text color transition
+- Title tooltip: "View product details"
+- Users can now deep-dive into any recommended product without leaving the chat
+
+### New Feature 2: AI Personality Analysis (LLM-powered)
+- **Backend**: Created `src/app/api/digital-twin/analysis/route.ts` — uses LLM to analyze the Digital Twin and generate a personality profile with: personalityType, summary, strengths[], growthAreas[], shoppingStyle, topRecommendation, funFact
+- **Frontend**: Created `src/components/digital-twin/twin-analysis.tsx` — rich card with:
+  - Brain icon (purple-pink gradient) + "AI Personality Analysis" title + AI badge
+  - "Your Type" section with gradient text personality type label
+  - Summary paragraph referencing specific trait values
+  - Strengths (emerald, with ✓) + Growth Areas (amber, with →) in 2-col grid
+  - Shopping Style section (Zap icon)
+  - "Explore Next" recommendation (emerald highlight, Lightbulb icon)
+  - Fun fact (💡 italic)
+  - Loading state with shimmer skeletons
+  - Fallback response if LLM fails
+- Added to Digital Twin view (between Preferred section and Explainability callout)
+- 5-minute staleTime to avoid repeated LLM calls
+- Verified: API returns 200, component renders all sections
+
+### New Feature 3: Seasonal Sale Calendar
+- Created `src/components/insights/sale-calendar.tsx` — festival sale tracker with:
+  - Calendar icon (amber-orange gradient) + "Sale Calendar" title
+  - "Next in Xd" badge (amber, with Flame icon)
+  - Next sale highlight card with emoji, name, countdown, description, date, platforms
+  - Upcoming sales list (top 5) with emoji, name, platform, date, countdown
+  - "Soon" badge (amber, Zap icon) for sales within 30 days
+  - 10 major Indian shopping festivals: Republic Day, Holi, Summer Sale, Prime Day, Independence Day, Big Billion Days, Great Indian Festival, Diwali, Black Friday, Christmas
+- Added to Insights view in a 2-col grid alongside Spending Goal
+- Verified: renders with "Sale Calendar", "Next in X days", "Big Billion Days", "Diwali Sale"
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200 on / and /api/digital-twin/analysis), no runtime errors
+- Product detail from chat: clickable names with hover state implemented
+- Twin analysis: API returns 200, component renders all 7 sections (Type, Summary, Strengths, Growth, Style, Explore, Fun Fact)
+- Sale calendar: renders with 10 festival sales, countdown, next sale highlight
+- All features work end-to-end
+
+## Unresolved Issues / Risks
+- Twin analysis LLM may return fallback if JSON parsing fails (graceful degradation)
+- VLM API rate limited during testing — features verified via accessibility tree
+- Sale calendar dates are hardcoded for 2026 — could be made dynamic in future
+
+## Priority Recommendations for Next Phase
+1. **Price alert push notifications**: Real-time push when wishlist target hit
+2. **Social features**: Share comparisons/wishlist with friends
+3. **Multi-user support**: Allow switching between user profiles
+4. **PDF export**: Use pdf skill to generate formatted PDF report
+5. **Discover infinite scroll**: Load more products as user scrolls
+6. **Advanced chat features**: Message reactions, pin important recommendations
+7. **Wishlist price history**: Show price trend for each wishlist item
+8. **Smart notifications**: LLM-generated shopping tips based on activity
