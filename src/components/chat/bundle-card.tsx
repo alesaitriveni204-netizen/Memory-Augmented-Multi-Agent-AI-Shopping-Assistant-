@@ -2,11 +2,12 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Package, Loader2, Sparkles, TrendingDown, ArrowRight, Plus } from 'lucide-react'
+import { Package, Loader2, Sparkles, TrendingDown, ArrowRight, Plus, Heart, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatINR, platformLabel } from '@/lib/ui-utils'
 import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
 
 interface BundleProduct {
   id: string
@@ -37,8 +38,32 @@ export function BundleCard({ productId, productName }: { productId: string; prod
   const [bundles, setBundles] = React.useState<Bundle[]>([])
   const [loading, setLoading] = React.useState(true)
   const [expanded, setExpanded] = React.useState(true)
+  const [addingBundle, setAddingBundle] = React.useState<number | null>(null)
+  const [addedBundle, setAddedBundle] = React.useState<number | null>(null)
   const addToCompare = useAppStore((s) => s.addToCompare)
   const setCompareOpen = useAppStore((s) => s.setCompareOpen)
+
+  async function addBundleToWishlist(bundle: Bundle, index: number) {
+    setAddingBundle(index)
+    try {
+      // Add all products in the bundle to wishlist
+      await Promise.all(
+        bundle.products.map((p) =>
+          fetch('/api/wishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: p.id }),
+          })
+        )
+      )
+      setAddedBundle(index)
+      toast.success(`Added ${bundle.products.length} products to wishlist`)
+    } catch {
+      toast.error('Failed to add bundle')
+    } finally {
+      setAddingBundle(null)
+    }
+  }
 
   React.useEffect(() => {
     let cancelled = false
@@ -174,22 +199,39 @@ export function BundleCard({ productId, productName }: { productId: string; prod
                       <span className="text-[10px] text-muted-foreground line-through">{formatINR(bundle.totalMRP)}</span>
                     </div>
                   </div>
-                  {bundle.totalSaved > 0 && (
-                    <div className="text-right">
+                  <div className="flex flex-col items-end gap-1">
+                    {bundle.totalSaved > 0 && (
                       <div className="flex items-center gap-0.5 text-[10px] font-semibold text-rose-500">
                         <TrendingDown className="h-2.5 w-2.5" />
                         Save {formatINR(bundle.totalSaved)}
                       </div>
+                    )}
+                    <div className="flex items-center gap-1">
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-5 text-[9px] px-1.5 text-purple-600 hover:text-purple-700 -mr-1"
+                        className="h-5 text-[9px] px-1.5 text-purple-600 hover:text-purple-700"
                         onClick={() => setCompareOpen(true)}
                       >
                         Compare all <ArrowRight className="h-2.5 w-2.5 ml-0.5" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 text-[9px] px-1.5 text-emerald-600 hover:text-emerald-700"
+                        disabled={addingBundle === bi}
+                        onClick={() => addBundleToWishlist(bundle, bi)}
+                      >
+                        {addingBundle === bi ? (
+                          <><Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> Adding…</>
+                        ) : addedBundle === bi ? (
+                          <><Check className="h-2.5 w-2.5 mr-0.5" /> Added!</>
+                        ) : (
+                          <><Heart className="h-2.5 w-2.5 mr-0.5" /> Add all</>
+                        )}
+                      </Button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </motion.div>
             ))}

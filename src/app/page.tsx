@@ -8,6 +8,7 @@ import { Sidebar, BottomNav } from '@/components/shell/sidebar'
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
 import { CompareModal } from '@/components/compare/compare-modal'
 import { CompareTray } from '@/components/compare/compare-tray'
+import { ProductDetailModal } from '@/components/product/product-detail-modal'
 import { ChatView } from '@/components/views/chat-view'
 import { DiscoverView } from '@/components/views/discover-view'
 import { WishlistView } from '@/components/views/wishlist-view'
@@ -201,6 +202,7 @@ export default function Home() {
 
       {!showOnboarding && <CompareTray />}
       <CompareModal />
+      <ProductDetailModal />
 
       <footer
         className="mt-auto border-t border-border/60 bg-gradient-to-r from-emerald-500/5 via-transparent to-teal-500/5 px-4 py-2.5 flex items-center justify-center gap-2 text-[10px] text-muted-foreground"

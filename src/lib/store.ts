@@ -145,6 +145,12 @@ interface AppState {
   removeFromCompare: (productId: string) => void
   clearCompare: () => void
   setCompareOpen: (b: boolean) => void
+
+  // Product detail modal
+  productDetailId: string | null
+  productDetailOpen: boolean
+  openProductDetail: (id: string) => void
+  closeProductDetail: () => void
 }
 
 export interface CompareItem {
@@ -214,4 +220,9 @@ export const useAppStore = create<AppState>((set) => ({
     set((s) => ({ compareItems: s.compareItems.filter((x) => x.productId !== productId) })),
   clearCompare: () => set({ compareItems: [] }),
   setCompareOpen: (compareOpen) => set({ compareOpen }),
+
+  productDetailId: null,
+  productDetailOpen: false,
+  openProductDetail: (id) => set({ productDetailId: id, productDetailOpen: true }),
+  closeProductDetail: () => set({ productDetailOpen: false, productDetailId: null }),
 }))
