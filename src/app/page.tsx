@@ -6,11 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/shell/header'
 import { Sidebar, BottomNav } from '@/components/shell/sidebar'
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
+import { CompareModal } from '@/components/compare/compare-modal'
+import { CompareTray } from '@/components/compare/compare-tray'
 import { ChatView } from '@/components/views/chat-view'
 import { DiscoverView } from '@/components/views/discover-view'
 import { WishlistView } from '@/components/views/wishlist-view'
 import { MemoryView } from '@/components/views/memory-view'
 import { DigitalTwinView } from '@/components/views/digital-twin-view'
+import { CoachView } from '@/components/views/coach-view'
 import { TimelineView } from '@/components/views/timeline-view'
 import { InsightsView } from '@/components/views/insights-view'
 import { SettingsView } from '@/components/views/settings-view'
@@ -183,6 +186,7 @@ export default function Home() {
                   {activeView === 'wishlist' && <WishlistView />}
                   {activeView === 'memory' && <MemoryView />}
                   {activeView === 'twin' && <DigitalTwinView />}
+                  {activeView === 'coach' && <CoachView />}
                   {activeView === 'timeline' && <TimelineView />}
                   {activeView === 'insights' && <InsightsView />}
                   {activeView === 'settings' && <SettingsView />}
@@ -194,6 +198,9 @@ export default function Home() {
       </div>
 
       {!showOnboarding && <BottomNav />}
+
+      {!showOnboarding && <CompareTray />}
+      <CompareModal />
 
       <footer
         className="mt-auto border-t border-border/60 bg-background/80 px-4 py-2 text-center text-[10px] text-muted-foreground"

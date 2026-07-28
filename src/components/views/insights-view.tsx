@@ -133,7 +133,7 @@ export function InsightsView() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: i * 0.05 }}
-              className="rounded-xl border border-border/60 bg-card p-3"
+              className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-muted/10 p-3 asos-card-lift hover:border-emerald-500/30"
             >
               <div className="flex items-center justify-between">
                 <div

@@ -33,6 +33,7 @@ import {
   scoreColor,
 } from '@/lib/ui-utils'
 import { toast } from 'sonner'
+import { useAppStore } from '@/lib/store'
 import type { RecommendationResult } from '@/lib/store'
 
 export function RecommendationCard({
@@ -45,6 +46,10 @@ export function RecommendationCard({
   const [open, setOpen] = React.useState(false)
   const [adding, setAdding] = React.useState(false)
   const [added, setAdded] = React.useState(false)
+  const addToCompare = useAppStore((s) => s.addToCompare)
+  const compareItems = useAppStore((s) => s.compareItems)
+  const setCompareOpen = useAppStore((s) => s.setCompareOpen)
+  const inCompare = compareItems.some((x) => x.productId === rec.productId)
 
   async function addToWishlist() {
     setAdding(true)
@@ -75,7 +80,7 @@ export function RecommendationCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden"
+      className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden asos-card-lift hover:border-emerald-500/40"
     >
       <div className="p-4">
         <div className="flex gap-3">
@@ -177,15 +182,36 @@ export function RecommendationCard({
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="h-8 text-xs"
-            onClick={() =>
-              onAskAi?.(
-                `Compare ${rec.name} with similar alternatives in the ${rec.category} category`,
-              )
-            }
+            variant={inCompare ? 'default' : 'outline'}
+            className={`h-8 text-xs ${inCompare ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+            onClick={() => {
+              if (inCompare) {
+                setCompareOpen(true)
+              } else {
+                addToCompare({
+                  productId: rec.productId,
+                  name: rec.name,
+                  brand: rec.brand,
+                  category: rec.category,
+                  imageColor: rec.imageColor,
+                  bestPlatform: rec.bestPlatform,
+                  bestPrice: rec.bestPrice,
+                  mrp: rec.mrp,
+                  discount: rec.discount,
+                  rating: rec.rating,
+                  reviewCount: rec.reviewCount,
+                  deliveryDays: rec.deliveryDays,
+                  shoppingScore: rec.shoppingScore,
+                  specs: rec.specs,
+                  pros: rec.pros,
+                  cons: rec.cons,
+                  priceAdvice: (rec as any).priceAdvice,
+                })
+                toast.success(`Added "${rec.name}" to comparison`)
+              }
+            }}
           >
-            Compare
+            {inCompare ? 'In Compare' : 'Compare'}
           </Button>
           <Button
             size="sm"

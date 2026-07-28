@@ -69,6 +69,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Subtle gradient accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
       <div className="flex h-16 items-center gap-3 px-3 md:px-6">
         <div className="flex items-center gap-2 min-w-0">
           <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 ring-emerald-500/20">

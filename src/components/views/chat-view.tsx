@@ -2,11 +2,12 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Send, ArrowDown } from 'lucide-react'
+import { Sparkles, Send, ArrowDown, Mic, Square, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RecommendationCard } from '@/components/chat/recommendation-card'
 import { AgentActivityPanel } from '@/components/chat/agent-activity-panel'
 import { useAppStore, type ChatMessage } from '@/lib/store'
+import { useVoiceInput } from '@/hooks/use-voice-input'
 import { toast } from 'sonner'
 
 const QUICK_SUGGESTIONS = [
@@ -71,6 +72,14 @@ export function ChatView() {
   const [input, setInput] = React.useState('')
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = React.useState(false)
+
+  const voice = useVoiceInput((text) => {
+    setInput((prev) => (prev ? prev + ' ' + text : text))
+    toast.success('Voice transcribed')
+  })
+  React.useEffect(() => {
+    if (voice.error) toast.error(`Voice error: ${voice.error}`)
+  }, [voice.error])
 
   React.useEffect(() => {
     if (pendingInput) {
@@ -265,10 +274,27 @@ export function ChatView() {
                 send(input)
               }
             }}
-            placeholder="Ask me to find, compare, or track any product…"
+            placeholder={voice.recording ? '🎤 Listening… speak now' : voice.transcribing ? 'Transcribing…' : 'Ask me to find, compare, or track any product…'}
             rows={1}
             className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground max-h-32"
           />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={voice.toggle}
+            disabled={voice.transcribing || loading}
+            className={`h-9 w-9 shrink-0 transition-all ${voice.recording ? 'bg-rose-500/15 text-rose-500 animate-pulse' : 'text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10'}`}
+            aria-label={voice.recording ? 'Stop recording' : 'Voice input'}
+            title={voice.recording ? 'Stop recording' : 'Voice input'}
+          >
+            {voice.transcribing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : voice.recording ? (
+              <Square className="h-4 w-4 fill-current" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
           <Button
             size="icon"
             onClick={() => send(input)}

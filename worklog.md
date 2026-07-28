@@ -192,3 +192,88 @@ Unresolved / Future Work (for cron agent to pick up):
 - Implement the "Compare" button action on recommendation cards
 - Add more chart types to Insights (e.g., spending over time)
 - Add export to PDF for insights/wishlist
+
+---
+Task ID: 8 (cron webDevReview round 1)
+Agent: main (cron-triggered webDevReview)
+Task: QA testing + new features (comparison, voice, coach) + styling polish
+
+## Current Project Status Assessment
+App was stable and fully functional from previous rounds. All 8 views, 11 agents, MARE, AHDE, DPT/DToC working. Dev server healthy, lint clean, no runtime errors. Demo user onboarded as Student Shopper (twin confidence 27%).
+
+## Work Completed This Round
+
+### QA Testing (agent-browser)
+- Tested onboarding, chat (recommendation + price queries), all 8 views
+- **Mobile viewport test** (390x844): Confirmed responsive layout works — bottom nav visible with all 8 tabs (horizontally scrollable), single-column layout, no horizontal overflow, product cards readable. VLM confirmed.
+- **AHDE routing verified**: complex recommendation → 8 agents (deep); simple price query → 2 agents (fast)
+- **MARE scoring verified**: earbuds query returned Sony WF-1000XM5 (Score 80), OnePlus Buds 3, etc.
+- **No bugs found** — app is stable
+
+### New Feature 1: Side-by-Side Product Comparison (PRD Ch 9.6, 14.12)
+- **Backend**: Added compare state to Zustand store (compareItems[], compareOpen, addToCompare, removeFromCompare, clearCompare, max 4 items)
+- **Frontend**: Created `src/components/compare/compare-modal.tsx` — full-screen modal with:
+  - Product header cards (colored brand visual, name, brand, category, remove button)
+  - Comparison table with rows: Shopping Score (with trophy for winner), Best Price (lowest badge), Discount (best deal badge), Platform, Rating (with star), Delivery (fastest badge), Price Trend (falling/rising/stable), all spec keys, Pros (green checks), Cons (red alerts), Buy button
+  - Best-in-category cells highlighted with emerald background
+  - Legend at bottom
+- Created `src/components/compare/compare-tray.tsx` — floating bottom tray showing compare items as thumbnails with count (N/4), clear button, and "Compare Now" button. Appears with spring animation when items added.
+- Updated `recommendation-card.tsx`: Compare button now adds to compare tray (shows "In Compare" state) instead of sending chat query
+- Updated `discover-view.tsx`: Added Compare button (GitCompare icon) next to Ask AI on product cards
+- Mounted CompareModal + CompareTray in app shell (page.tsx)
+- VLM verified: "2 products side-by-side with Shopping Scores, prices, discounts, platforms, ratings, delivery, price trends, specs — Best deal badges, Falling/Stable indicators"
+
+### New Feature 2: Voice Input (ASR skill)
+- **Backend**: Created `src/app/api/asr/route.ts` — accepts base64 audio, uses z-ai-web-dev-sdk `audio.asr.create()` to transcribe
+- **Frontend**: Created `src/hooks/use-voice-input.ts` — MediaRecorder hook that records audio, converts to base64, sends to /api/asr, returns transcript
+- Updated `chat-view.tsx`: Added mic button (Mic icon) next to textarea with 3 states: idle (gray), recording (rose, pulsing, Square icon), transcribing (spinner). Placeholder changes to "🎤 Listening… speak now" during recording. Transcript appended to input.
+- Tested: button correctly attempts mic access, shows graceful error toast "Voice error: Requested device not found" in headless mode (expected — no physical mic). On real device, would record + transcribe.
+
+### New Feature 3: Shopping Coach View (new 9th view)
+- Added 'coach' to ViewKey type + sidebar nav (GraduationCap icon, positioned between Digital Twin and Timeline)
+- Created `src/components/views/coach-view.tsx` — personalized AI shopping advisor:
+  - **Persona summary card**: emoji, persona label, shopping style, twin confidence gauge with status text ("Learning you" / "Getting accurate" / "Highly accurate")
+  - **Personalized Tips** (2-col grid): 5 dynamic tips generated from twin traits — price sensitivity, tech adoption, impulse buying, brand loyalty, discount preference. Each tip has icon, title, body, and action button that hands off to chat.
+  - **Smart Goals** (3-col grid): Reduce impulse buys, Improve comparison habit, Build brand awareness — each with progress bar + percentage
+  - **Savings Opportunities**: 6 cards (cross-platform gaps, festival sale calendar, bank offer stacking, comparison habit ROI, price tracking alerts, refurbished tech)
+  - **Ask the Coach CTA**: 3 quick-action buttons (Sale strategy, Save money, Recommend for me) that switch to chat with pre-filled queries
+- Mounted in page.tsx view router
+- VLM verified: "well-designed cards with consistent rounded corners, clear visual hierarchy, vibrant emerald greens, modern dark mode aesthetic"
+
+### Styling Polish
+- **globals.css**: Added 6 new utility classes:
+  - `.asos-glow-emerald` / `.asos-glow-amber` — box-shadow glow for high scores
+  - `.asos-shimmer` — skeleton loading animation
+  - `.asos-card-lift` — hover translateY(-2px) + emerald shadow
+  - `.asos-fade-up` — entrance animation
+  - `.asos-pulse-ring` — recording indicator pulse
+  - `.asos-gradient-border` — gradient border via mask
+- **empty-state.tsx**: Enhanced with gradient blob backgrounds, ring-1 border, emoji support, motion entrance. Added `ProductCardSkeleton` component.
+- **recommendation-card.tsx**: Applied `asos-card-lift hover:border-emerald-500/40`
+- **discover-view.tsx**: Applied card-lift + hover shadow; replaced LoadingState with 8x ProductCardSkeleton grid; added Compare button
+- **insights-view.tsx**: KPI cards now use gradient background (`from-card to-muted/10`) + card-lift
+- **header.tsx**: Added subtle gradient accent line under header (`bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent`)
+- **wishlist-view.tsx**: Enhanced empty state with 🛍️ emoji + "Browse products" CTA button
+
+### Verification Results
+- `bun run lint` — zero errors, zero warnings (after all changes)
+- Dev server stable, no runtime errors
+- All features browser-tested via agent-browser
+- VLM confirmed visual quality on chat, coach, and compare views
+- Mobile responsiveness confirmed (390px viewport)
+
+## Unresolved Issues / Risks
+- Voice input requires physical microphone — works in real browsers, shows graceful error in headless
+- Compare modal uses CSS grid with dynamic column count — works for 1-4 items, not tested with exactly 1 item (edge case)
+- Coach tips are rule-based (not LLM-generated) — could be enhanced with LLM generation in future rounds
+- No automated tests (per project rules)
+
+## Priority Recommendations for Next Phase
+1. **LLM-powered Coach tips**: Replace rule-based tip generation with LLM call that analyzes the twin and generates natural-language advice
+2. **Comparison "AI Verdict"**: Add an LLM-generated summary at the top of the compare modal that recommends the best product with reasoning
+3. **Price history charts in compare modal**: Add mini sparkline charts showing 8-week price trends per product
+4. **Web search integration**: Use web-search skill to fetch real-time product info for recommendations
+5. **Image-based product search**: Use VLM skill to let users upload a product image and find similar products
+6. **More products in catalog**: Expand from 30 to 60+ products across more subcategories
+7. **Spending tracker**: Add a monthly spending visualization to Insights based on "purchased" recommendations
+8. **Export insights to PDF**: Use pdf skill to generate a downloadable shopping intelligence report

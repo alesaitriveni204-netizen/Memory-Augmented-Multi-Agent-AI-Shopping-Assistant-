@@ -10,6 +10,7 @@ import {
   Bell,
   TrendingDown,
   ExternalLink,
+  Compass,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +23,7 @@ import {
   platformLabel,
   parseJsonArray,
 } from '@/lib/ui-utils'
+import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 
 interface ApiWishlistItem {
@@ -110,9 +112,14 @@ export function WishlistView() {
         <LoadingState label="Loading wishlist…" />
       ) : items.length === 0 ? (
         <EmptyState
-          icon={Heart}
+          emoji="🛍️"
           title="Your wishlist is empty"
           description="Save products from chat or discover to track their prices and get notified of deals."
+          action={
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => useAppStore.getState().setActiveView('discover')}>
+              <Compass className="h-3.5 w-3.5 mr-1" /> Browse products
+            </Button>
+          }
         />
       ) : (
         <div className="space-y-3">

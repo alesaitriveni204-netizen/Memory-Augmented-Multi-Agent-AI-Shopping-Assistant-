@@ -9,6 +9,7 @@ import {
   Activity,
   BarChart3,
   Settings,
+  GraduationCap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore, type ViewKey } from '@/lib/store'
@@ -23,6 +24,7 @@ export const NAV_ITEMS: {
   { key: 'wishlist', label: 'Wishlist', icon: Heart },
   { key: 'memory', label: 'Memory', icon: Brain },
   { key: 'twin', label: 'Digital Twin', icon: Users },
+  { key: 'coach', label: 'Coach', icon: GraduationCap },
   { key: 'timeline', label: 'Timeline', icon: Activity },
   { key: 'insights', label: 'Insights', icon: BarChart3 },
   { key: 'settings', label: 'Settings', icon: Settings },

@@ -164,3 +164,82 @@
   background-clip: text;
   color: transparent;
 }
+
+/* ===== Glow effect for high scores ===== */
+.asos-glow-emerald {
+  box-shadow: 0 0 20px -4px rgb(16 185 129 / 0.5);
+}
+.asos-glow-amber {
+  box-shadow: 0 0 20px -4px rgb(245 158 11 / 0.4);
+}
+
+/* ===== Shimmer loading skeleton ===== */
+@keyframes asos-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.asos-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--muted) 40%,
+    color-mix(in oklch, var(--muted) 60%, var(--primary) 10%) 50%,
+    var(--muted) 60%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: asos-shimmer 1.8s infinite linear;
+}
+
+/* ===== Card hover lift ===== */
+.asos-card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.asos-card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgb(16 185 129 / 0.15);
+}
+
+/* ===== Fade-in-up entrance ===== */
+@keyframes asos-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.asos-fade-up {
+  animation: asos-fade-up 0.4s ease-out both;
+}
+
+/* ===== Pulse ring (for recording indicator) ===== */
+@keyframes asos-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(244 63 94 / 0.5); }
+  70% { box-shadow: 0 0 0 12px rgb(244 63 94 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(244 63 94 / 0); }
+}
+.asos-pulse-ring {
+  animation: asos-pulse-ring 1.5s infinite;
+}
+
+/* ===== Gradient border card ===== */
+.asos-gradient-border {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+}
+.asos-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgb(16 185 129 / 0.4), rgb(20 184 166 / 0.2), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ===== Smooth scrollbar for main content ===== */
+html {
+  scrollbar-gutter: stable;
+}
+

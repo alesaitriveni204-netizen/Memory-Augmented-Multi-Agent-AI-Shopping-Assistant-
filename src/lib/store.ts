@@ -9,6 +9,7 @@ export type ViewKey =
   | 'wishlist'
   | 'memory'
   | 'twin'
+  | 'coach'
   | 'timeline'
   | 'insights'
   | 'settings'
@@ -136,6 +137,34 @@ interface AppState {
   // Notification dropdown
   notifOpen: boolean
   setNotifOpen: (b: boolean) => void
+
+  // Comparison tray — products added for side-by-side comparison
+  compareItems: CompareItem[]
+  compareOpen: boolean
+  addToCompare: (item: CompareItem) => void
+  removeFromCompare: (productId: string) => void
+  clearCompare: () => void
+  setCompareOpen: (b: boolean) => void
+}
+
+export interface CompareItem {
+  productId: string
+  name: string
+  brand: string
+  category: string
+  imageColor: string
+  bestPlatform: string
+  bestPrice: number
+  mrp: number
+  discount: number
+  rating: number
+  reviewCount: number
+  deliveryDays: number
+  shoppingScore?: number
+  specs?: Record<string, string | number>
+  pros?: string[]
+  cons?: string[]
+  priceAdvice?: { trend: string; advice: string; avgPrice: number; lowest: number; highest: number }
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -171,4 +200,18 @@ export const useAppStore = create<AppState>((set) => ({
 
   notifOpen: false,
   setNotifOpen: (notifOpen) => set({ notifOpen }),
+
+  compareItems: [],
+  compareOpen: false,
+  addToCompare: (item) =>
+    set((s) => {
+      // max 4 items, no duplicates
+      if (s.compareItems.some((x) => x.productId === item.productId)) return s
+      if (s.compareItems.length >= 4) return s
+      return { compareItems: [...s.compareItems, item] }
+    }),
+  removeFromCompare: (productId) =>
+    set((s) => ({ compareItems: s.compareItems.filter((x) => x.productId !== productId) })),
+  clearCompare: () => set({ compareItems: [] }),
+  setCompareOpen: (compareOpen) => set({ compareOpen }),
 }))

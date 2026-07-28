@@ -3,12 +3,12 @@
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, Star, Sparkles } from 'lucide-react'
+import { Search, Star, Sparkles, GitCompare } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductVisual } from '@/components/common/product-visual'
-import { EmptyState, LoadingState } from '@/components/common/empty-state'
+import { EmptyState, LoadingState, ProductCardSkeleton } from '@/components/common/empty-state'
 import { useAppStore } from '@/lib/store'
 import {
   ALL_CATEGORIES,
@@ -41,6 +41,7 @@ export function DiscoverView() {
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
   const setActiveView = useAppStore((s) => s.setActiveView)
   const setPendingChatInput = useAppStore((s) => s.setPendingChatInput)
+  const addToCompare = useAppStore((s) => s.addToCompare)
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350)
@@ -122,7 +123,9 @@ export function DiscoverView() {
       </div>
 
       {isLoading ? (
-        <LoadingState label="Loading products…" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+        </div>
       ) : products.length === 0 ? (
         <EmptyState
           title="No products found"
@@ -143,7 +146,7 @@ export function DiscoverView() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
-                className="rounded-xl border border-border/60 bg-card p-3 flex flex-col gap-2 hover:border-emerald-500/40 transition-colors"
+                className="rounded-xl border border-border/60 bg-card p-3 flex flex-col gap-2 hover:border-emerald-500/40 transition-all hover:shadow-md hover:shadow-emerald-500/10 hover:-translate-y-0.5 asos-card-lift"
               >
                 <div className="flex gap-3">
                   <ProductVisual
@@ -206,15 +209,43 @@ export function DiscoverView() {
                   </div>
                 </div>
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full h-8 text-xs mt-auto"
-                  onClick={() => askAbout(p)}
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
-                  Ask AI
-                </Button>
+                <div className="flex gap-2 mt-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => askAbout(p)}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                    Ask AI
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs px-2"
+                    onClick={() => {
+                      if (best) {
+                        addToCompare({
+                          productId: p.id,
+                          name: p.name,
+                          brand: p.brand,
+                          category: p.category,
+                          imageColor: p.imageColor,
+                          bestPlatform: best.platform,
+                          bestPrice: best.price,
+                          mrp: (p as any).basePrice ? Math.round((p as any).basePrice * 1.15) : best.price,
+                          discount: Math.round((((p as any).basePrice ? Math.round((p as any).basePrice * 1.15) : best.price) - best.price) / ((p as any).basePrice ? Math.round((p as any).basePrice * 1.15) : best.price) * 100),
+                          rating: p.rating,
+                          reviewCount: p.reviewCount,
+                          deliveryDays: best.deliveryDays,
+                        })
+                      }
+                    }}
+                    title="Add to comparison"
+                  >
+                    <GitCompare className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </motion.div>
             )
           })}
