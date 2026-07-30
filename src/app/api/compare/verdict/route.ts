@@ -91,9 +91,13 @@ Return ONLY the JSON.`;
     return NextResponse.json(result);
   } catch (err: any) {
     console.error("[api/compare/verdict] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate verdict", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return fallback instead of 500
+    return NextResponse.json({
+      winner: "",
+      verdict: "AI verdict unavailable — try again later.",
+      reasoning: [],
+      bestFor: "",
+      runnerUp: "",
+    });
   }
 }

@@ -14,6 +14,15 @@ async function getZai() {
   return zaiInstance;
 }
 
+/** Safely extract hostname from a URL string without throwing */
+function safeHostname(url: string): string {
+  try {
+    return url ? new URL(url).hostname : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -29,7 +38,21 @@ export async function POST(req: Request) {
     const args: any = { query, num };
     if (recency_days) args.recency_days = recency_days;
 
-    const results = await (zai as any).functions.invoke("web_search", args);
+    let results: any;
+    try {
+      results = await (zai as any).functions.invoke("web_search", args);
+    } catch (invokeErr: any) {
+      // Handle rate limits (429) and other SDK errors gracefully — return empty results
+      const msg = invokeErr?.message ?? String(invokeErr);
+      const isRateLimit = msg.includes("429") || msg.includes("Too many requests");
+      if (isRateLimit) {
+        console.warn("[api/web-search] rate limited, returning empty results");
+        return NextResponse.json({ results: [], query, rateLimited: true });
+      }
+      // For other errors, also return empty instead of 500
+      console.error("[api/web-search] invoke error:", msg);
+      return NextResponse.json({ results: [], query, error: msg });
+    }
 
     // Normalize results to a clean array
     let arr: any[] = [];
@@ -41,7 +64,7 @@ export async function POST(req: Request) {
       url: r.url ?? r.link ?? "",
       name: r.name ?? r.title ?? "Untitled",
       snippet: r.snippet ?? r.description ?? "",
-      host_name: r.host_name ?? (r.url ? new URL(r.url).hostname : ""),
+      host_name: r.host_name ?? safeHostname(r.url ?? r.link ?? ""),
       rank: r.rank ?? i + 1,
       date: r.date ?? "",
       favicon: r.favicon ?? "",
@@ -50,9 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ results: clean, query });
   } catch (err: any) {
     console.error("[api/web-search] error:", err);
-    return NextResponse.json(
-      { error: "Web search failed", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return empty results instead of 500 to prevent frontend crashes
+    return NextResponse.json({ results: [], error: err?.message ?? String(err) });
   }
 }

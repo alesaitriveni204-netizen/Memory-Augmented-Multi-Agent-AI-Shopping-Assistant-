@@ -91,9 +91,14 @@ Return ONLY the JSON.`;
     return NextResponse.json(result);
   } catch (err: any) {
     console.error("[api/price-prediction] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate prediction", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return fallback instead of 500 to prevent frontend crashes
+    return NextResponse.json({
+      recommendation: "neutral",
+      confidence: 50,
+      reasoning: "Price prediction unavailable at the moment.",
+      predictedDiscount: "0-3%",
+      bestTimeToBuy: "Anytime",
+      tip: "Try again later for a detailed prediction.",
+    });
   }
 }

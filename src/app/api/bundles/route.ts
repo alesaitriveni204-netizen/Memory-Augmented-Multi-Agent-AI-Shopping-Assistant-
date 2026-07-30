@@ -60,8 +60,10 @@ export async function POST(req: Request) {
     // Use LLM to curate 2 bundles of 2-3 products each
     const twin = user.digitalTwin ? JSON.parse(user.digitalTwin) : null;
     const productSummaries = sorted.slice(0, 8).map((p, i) => {
-      const bestPrice = p.platformPrices.length > 0
-        ? Math.min(...p.platformPrices.filter(pp => pp.inStock).map(pp => pp.price))
+      const inStock = p.platformPrices.filter(pp => pp.inStock);
+      const candidates = inStock.length > 0 ? inStock : p.platformPrices;
+      const bestPrice = candidates.length > 0
+        ? Math.min(...candidates.map(pp => pp.price))
         : p.basePrice;
       return `${i + 1}. ${p.name} (${p.brand}, ${p.category}) — ₹${bestPrice.toLocaleString("en-IN")}, ${p.rating}★, ${p.reviewCount} reviews`;
     }).join("\n");
@@ -111,10 +113,8 @@ Return ONLY the JSON.`;
     return NextResponse.json({ bundles: buildBundles(result.bundles, sorted, product) });
   } catch (err: any) {
     console.error("[api/bundles] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate bundles", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return empty bundles instead of 500
+    return NextResponse.json({ bundles: [] });
   }
 }
 

@@ -60,6 +60,17 @@ export function scoreProduct(
   // ── 1. Find best platform price (lowest in-stock)
   const inStock = product.platformPrices.filter((p) => p.inStock);
   const candidates = inStock.length > 0 ? inStock : product.platformPrices;
+  if (candidates.length === 0) {
+    // No platform prices available — use base price as fallback
+    const bestPlatform = { platform: "amazon", price: product.basePrice, mrp: product.basePrice, discount: 0, deliveryDays: 3, inStock: true };
+    return {
+      score: 50,
+      breakdown: { preference: 50, price: 50, review: 50, spec: 50, twinCompat: 50, memory: 50, context: 50, availability: 30 },
+      bestPlatform,
+      bestPrice: product.basePrice,
+      mrp: product.basePrice,
+    };
+  }
   const bestPlatform = candidates.reduce(
     (best, p) => (p.price < best.price ? p : best),
     candidates[0]

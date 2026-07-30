@@ -88,9 +88,10 @@ Return ONLY the JSON.`;
     return NextResponse.json(result);
   } catch (err: any) {
     console.error("[api/coach/tips] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate tips", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return fallback instead of 500
+    return NextResponse.json({
+      tips: [],
+      summary: "Keep chatting to unlock personalized coaching insights.",
+    });
   }
 }

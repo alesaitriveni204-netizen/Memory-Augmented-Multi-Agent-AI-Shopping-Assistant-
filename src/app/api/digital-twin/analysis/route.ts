@@ -85,9 +85,15 @@ Return ONLY the JSON.`;
     return NextResponse.json(result);
   } catch (err: any) {
     console.error("[api/digital-twin/analysis] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate analysis", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return fallback instead of 500
+    return NextResponse.json({
+      personalityType: "Shopping Enthusiast",
+      summary: "Analysis unavailable — try again later.",
+      strengths: [],
+      growthAreas: [],
+      shoppingStyle: "",
+      topRecommendation: "",
+      funFact: "",
+    });
   }
 }

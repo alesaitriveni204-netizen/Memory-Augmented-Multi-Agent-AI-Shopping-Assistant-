@@ -74,9 +74,13 @@ export async function GET() {
         brand: w.product.brand,
         category: w.product.category,
         targetPrice: w.targetPrice,
-        bestPrice: w.product.platformPrices?.length > 0
-          ? Math.min(...w.product.platformPrices.filter((p) => p.inStock).map((p) => p.price))
-          : w.product.basePrice,
+        bestPrice: (() => {
+          const prices = w.product.platformPrices;
+          if (!prices || prices.length === 0) return w.product.basePrice;
+          const inStock = prices.filter((p) => p.inStock);
+          const candidates = inStock.length > 0 ? inStock : prices;
+          return Math.min(...candidates.map((p) => p.price));
+        })(),
         addedAt: w.createdAt,
       })),
       recommendations: recommendations.map((r) => ({

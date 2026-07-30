@@ -53,18 +53,38 @@ Rules:
 - Focus on shopping-relevant attributes
 Return ONLY the JSON.`;
 
-    const visionResponse = await (zai as any).chat.completions.createVision({
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: systemPrompt },
-            { type: "image_url", image_url: { url: imageDataUrl } },
-          ],
+    let visionResponse: any;
+    try {
+      visionResponse = await (zai as any).chat.completions.createVision({
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: systemPrompt },
+              { type: "image_url", image_url: { url: imageDataUrl } },
+            ],
+          },
+        ],
+        thinking: { type: "disabled" },
+      });
+    } catch (visionErr: any) {
+      const msg = visionErr?.message ?? String(visionErr);
+      const isRateLimit = msg.includes("429") || msg.includes("Too many requests");
+      console.error("[api/image-search] vision error:", msg);
+      // Return graceful fallback instead of 500
+      return NextResponse.json({
+        analysis: {
+          category: "unknown",
+          brand: "unknown",
+          type: "product",
+          color: "",
+          features: [],
+          description: isRateLimit ? "Rate limited — please try again in a moment." : "Could not analyze image.",
         },
-      ],
-      thinking: { type: "disabled" },
-    });
+        products: [],
+        rateLimited: isRateLimit,
+      });
+    }
 
     const rawAnalysis = visionResponse?.choices?.[0]?.message?.content ?? "";
 
@@ -150,9 +170,11 @@ Return ONLY the JSON.`;
     return NextResponse.json({ analysis, products });
   } catch (err: any) {
     console.error("[api/image-search] error:", err);
-    return NextResponse.json(
-      { error: "Image search failed", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    // Return graceful fallback instead of 500
+    return NextResponse.json({
+      analysis: { category: "unknown", brand: "unknown", type: "product", color: "", features: [], description: "Analysis failed — please try again." },
+      products: [],
+      error: err?.message ?? String(err),
+    });
   }
 }

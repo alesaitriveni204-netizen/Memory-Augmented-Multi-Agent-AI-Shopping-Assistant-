@@ -479,9 +479,11 @@ export async function generateNotificationsForUser(userId: string) {
   });
   const created: any[] = [];
   for (const item of wishlist) {
-    const best = item.product.platformPrices
-      .filter((p) => p.inStock)
-      .reduce((min, p) => (p.price < min.price ? p : min), item.product.platformPrices[0]);
+    const prices = item.product.platformPrices;
+    if (!prices || prices.length === 0) continue;
+    const inStock = prices.filter((p) => p.inStock);
+    const candidates = inStock.length > 0 ? inStock : prices;
+    const best = candidates.reduce((min, p) => (p.price < min.price ? p : min), candidates[0]);
     if (item.targetPrice && best.price <= item.targetPrice) {
       // Check we haven't already notified recently
       const existing = await db.notification.findFirst({

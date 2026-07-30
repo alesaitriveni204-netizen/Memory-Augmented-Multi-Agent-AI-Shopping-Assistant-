@@ -25,17 +25,26 @@ export async function POST(req: Request) {
     }
 
     const zai = await getZai();
-    const response = await (zai as any).audio.asr.create({
-      file_base64: audioBase64,
-    });
+    let response: any;
+    try {
+      response = await (zai as any).audio.asr.create({
+        file_base64: audioBase64,
+      });
+    } catch (asrErr: any) {
+      const msg = asrErr?.message ?? String(asrErr);
+      const isRateLimit = msg.includes("429") || msg.includes("Too many requests");
+      console.error("[api/asr] error:", msg);
+      // Return empty text instead of 500
+      return NextResponse.json({
+        text: "",
+        error: isRateLimit ? "Rate limited — please try again." : "Transcription failed.",
+      });
+    }
 
     const text = response?.text ?? "";
     return NextResponse.json({ text });
   } catch (err: any) {
     console.error("[api/asr] error:", err);
-    return NextResponse.json(
-      { error: "Failed to transcribe audio", detail: err?.message ?? String(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ text: "", error: err?.message ?? String(err) });
   }
 }

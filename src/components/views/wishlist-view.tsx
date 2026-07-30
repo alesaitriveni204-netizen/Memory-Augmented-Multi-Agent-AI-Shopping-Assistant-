@@ -268,10 +268,13 @@ export function WishlistView() {
       ) : (
         <div className="space-y-3">
           {sortedItems.map((item, i) => {
-            const best = item.product.platformPrices?.reduce(
-              (min, pp) => (pp.price < min.price ? pp : min),
-              item.product.platformPrices[0],
-            )
+            const prices = item.product.platformPrices
+            const best = prices && prices.length > 0
+              ? prices.reduce(
+                  (min, pp) => (pp.price < min.price ? pp : min),
+                  prices[0],
+                )
+              : null
             const target = item.targetPrice
             const hitTarget = target != null && best && best.price <= target
             const pros = parseJsonArray<string>(item.product.pros)
