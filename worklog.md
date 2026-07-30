@@ -982,3 +982,44 @@ Performed comprehensive error audit across all API routes, frontend components, 
 2. **Safe array access**: All `Math.min/max(...array)` calls now guard against empty arrays with fallback values
 3. **Safe reduce**: All `.reduce(fn, array[0])` calls now check `array.length > 0` first
 4. **Safe URL parsing**: `new URL()` wrapped in try/catch via `safeHostname()` helper
+
+---
+Task ID: 19 (fix setPendingInput TypeError)
+Agent: main
+Task: Fix "setPendingInput is not a function" TypeError + scan for similar errors
+
+## Issue
+Runtime TypeError: `setPendingInput is not a function` at `src/components/views/chat-view.tsx:112`
+
+## Root Cause
+Line 80 of chat-view.tsx accessed `useAppStore((s) => s.setPendingInput)` but the store field is named `setPendingChatInput` (not `setPendingInput`). This returned `undefined`, so calling `setPendingInput(null)` on line 112 threw a TypeError.
+
+This bug affected the "Ask AI" handoff flow from Discover view — clicking "Ask AI" on a product would crash the app instead of switching to chat with the pre-filled query.
+
+## Fix
+Changed line 80 from:
+```ts
+const setPendingInput = useAppStore((s) => s.setPendingInput)
+```
+to:
+```ts
+const setPendingInput = useAppStore((s) => s.setPendingChatInput)
+```
+
+The local variable name `setPendingInput` was kept (used on lines 110-114) to minimize changes — only the store accessor was wrong.
+
+## Systematic Audit
+Ran a Python script to check ALL `useAppStore((s) => s.X)` and `useAppStore.getState().X` calls across the codebase against the actual `AppState` interface fields:
+
+**Result: ✅ All store field accesses are now valid** — no other mismatches found.
+
+Also verified:
+- All custom hooks (usePriceHistory, useVoiceInput, useComparisonHistory, useSpendingGoal) exist and export correctly
+- All component imports resolve to actual exports
+- All UI component imports (Button, Badge, Input, etc.) resolve to shadcn/ui components
+
+## Verification
+- `bun run lint` — zero errors, zero warnings
+- Browser tested: Clicked "Ask AI" on a product in Discover → correctly switched to Chat with pre-filled input "Tell me about the LG 65" OLED evo C4. Is it worth buying right now?"
+- No TypeErrors in dev log
+- All APIs returning 200

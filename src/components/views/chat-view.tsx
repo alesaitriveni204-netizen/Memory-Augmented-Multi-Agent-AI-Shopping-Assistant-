@@ -77,7 +77,7 @@ export function ChatView() {
   const loading = useAppStore((s) => s.chatLoading)
   const setLoading = useAppStore((s) => s.setChatLoading)
   const pendingInput = useAppStore((s) => s.pendingChatInput)
-  const setPendingInput = useAppStore((s) => s.setPendingInput)
+  const setPendingInput = useAppStore((s) => s.setPendingChatInput)
 
   const [input, setInput] = React.useState('')
   const [searchQuery, setSearchQuery] = React.useState('')
