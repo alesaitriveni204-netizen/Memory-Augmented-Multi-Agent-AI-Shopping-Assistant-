@@ -1023,3 +1023,31 @@ Also verified:
 - Browser tested: Clicked "Ask AI" on a product in Discover → correctly switched to Chat with pre-filled input "Tell me about the LG 65" OLED evo C4. Is it worth buying right now?"
 - No TypeErrors in dev log
 - All APIs returning 200
+
+---
+Task ID: 20 (add Sale Calendar as separate dashboard view)
+Agent: main
+Task: Add sale calendar as a separate view/tab in the dashboard
+
+## What Was Done
+- Created a new dedicated **Sales** view (`src/components/views/sales-view.tsx`) as a full standalone dashboard tab
+- Added `'sales'` to the `ViewKey` type in the Zustand store
+- Added "Sales" nav item (CalendarDays icon) to the sidebar between Timeline and Insights
+- Wired `SalesView` into the page.tsx view router
+- Removed the embedded `SaleCalendar` component from the Insights view (now lives in its own tab)
+- Removed the unused `SaleCalendar` import from insights-view.tsx
+
+## Sales View Features
+The new dedicated Sales view includes:
+1. **Header** — "Sale Calendar" with description
+2. **Next Sale Hero Banner** — large gradient card with emoji, sale name, description, date, platform, countdown ("X days left"), and "Get deals" button that hands off to chat
+3. **Quick Stats** — 3 cards: Upcoming Sales count, Within 30 days count, Platforms count
+4. **Sales by Month** — grouped by month with month headers (gradient badge), each sale as a card with emoji icon, name, description, countdown, platform, "Soon" badge for sales within 30 days. Clicking a sale hands off to chat with "What are the best deals during [sale name]?"
+5. **Smart Shopping Tips** — emerald callout with 4 tips: wishlist before sale, compare across platforms, stack bank offers, use Buy/Wait AI
+6. **13 major Indian shopping festivals** — Republic Day, Valentine's, Holi, Summer Sale, Mother's Day, Prime Day, Independence Day, Onam, Big Billion Days, Great Indian Festival, Diwali, Black Friday, Christmas
+
+## Verification
+- `bun run lint` — zero errors, zero warnings
+- Dev server stable (HTTP 200)
+- VLM confirmed: "highly polished, cohesive dark-mode aesthetic, clear visual hierarchy, vibrant accent colors"
+- Browser tested: Sales tab visible, view renders with all sections

@@ -16,6 +16,7 @@ import { MemoryView } from '@/components/views/memory-view'
 import { DigitalTwinView } from '@/components/views/digital-twin-view'
 import { CoachView } from '@/components/views/coach-view'
 import { TimelineView } from '@/components/views/timeline-view'
+import { SalesView } from '@/components/views/sales-view'
 import { InsightsView } from '@/components/views/insights-view'
 import { SettingsView } from '@/components/views/settings-view'
 import { useAppStore } from '@/lib/store'
@@ -189,6 +190,7 @@ export default function Home() {
                   {activeView === 'twin' && <DigitalTwinView />}
                   {activeView === 'coach' && <CoachView />}
                   {activeView === 'timeline' && <TimelineView />}
+                  {activeView === 'sales' && <SalesView />}
                   {activeView === 'insights' && <InsightsView />}
                   {activeView === 'settings' && <SettingsView />}
                 </motion.div>

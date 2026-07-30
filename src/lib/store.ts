@@ -11,6 +11,7 @@ export type ViewKey =
   | 'twin'
   | 'coach'
   | 'timeline'
+  | 'sales'
   | 'insights'
   | 'settings'
 
