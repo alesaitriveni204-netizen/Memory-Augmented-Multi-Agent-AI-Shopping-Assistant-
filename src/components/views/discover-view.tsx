@@ -3,13 +3,14 @@
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, Star, Sparkles, GitCompare, SlidersHorizontal } from 'lucide-react'
+import { Search, Star, Sparkles, GitCompare, SlidersHorizontal, Globe, RefreshCw, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductVisual } from '@/components/common/product-visual'
 import { EmptyState, LoadingState, ProductCardSkeleton } from '@/components/common/empty-state'
 import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
 import {
   ALL_CATEGORIES,
   formatINR,
@@ -140,6 +141,65 @@ export function DiscoverView() {
     setSelectedBrands([])
   }
 
+  // Live discovery state
+  const [liveMode, setLiveMode] = React.useState(false)
+  const [liveLoading, setLiveLoading] = React.useState(false)
+  const [liveProducts, setLiveProducts] = React.useState<any[]>([])
+  const [refreshing, setRefreshing] = React.useState(false)
+
+  async function searchLive() {
+    if (!debouncedSearch.trim()) {
+      setLiveProducts([])
+      return
+    }
+    setLiveLoading(true)
+    try {
+      const res = await fetch('/api/products/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: debouncedSearch, category }),
+      })
+      const data = await res.json()
+      if (res.ok && data.products) {
+        setLiveProducts(data.products)
+      }
+    } catch {
+      /* swallow */
+    } finally {
+      setLiveLoading(false)
+    }
+  }
+
+  async function refreshPrices() {
+    setRefreshing(true)
+    try {
+      const res = await fetch('/api/products/refresh-prices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`Refreshed prices for ${data.updated} products`)
+        // Refetch catalog
+        window.location.reload()
+      }
+    } catch {
+      toast.error('Failed to refresh prices')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Auto-search in live mode
+  React.useEffect(() => {
+    if (liveMode && debouncedSearch) {
+      searchLive()
+    } else {
+      setLiveProducts([])
+    }
+  }, [liveMode, debouncedSearch, category])
+
   function askAbout(p: ApiProduct) {
     setPendingChatInput(
       `Tell me about the ${p.name}. Is it worth buying right now?`,
@@ -165,11 +225,30 @@ export function DiscoverView() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search products, brands, or categories…"
+            placeholder={liveMode ? "Search the LIVE web for real products…" : "Search products, brands, or categories…"}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
+        </div>
+
+        {/* Live mode toggle + refresh prices */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => { setLiveMode(!liveMode); setLiveProducts([]) }}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${liveMode ? 'border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400' : 'border-border/60 text-muted-foreground hover:bg-muted'}`}
+          >
+            <Globe className="h-3 w-3" />
+            {liveMode ? 'Live Web Search ON' : 'Live Web Search'}
+          </button>
+          <button
+            onClick={refreshPrices}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing…' : 'Refresh Live Prices'}
+          </button>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -341,6 +420,107 @@ export function DiscoverView() {
         )}
       </div>
 
+      {/* Live web search results */}
+      {liveMode && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-sky-500" />
+            <span className="text-sm font-semibold">Live Web Results</span>
+            {liveLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-500" />}
+            {liveProducts.length > 0 && !liveLoading && (
+              <Badge variant="outline" className="text-[10px] border-sky-500/30 text-sky-600 dark:text-sky-400">
+                {liveProducts.length} found
+              </Badge>
+            )}
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Real products from Amazon, Flipkart, Croma & more
+            </span>
+          </div>
+
+          {liveLoading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            </div>
+          ) : liveProducts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {liveProducts.map((p, i) => {
+                const bestPrice = p.platformPrices?.[0]?.price || p.basePrice || 0
+                const platform = p.platformPrices?.[0]?.platform || "web"
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3 flex flex-col gap-2 asos-card-lift cursor-pointer"
+                    onClick={() => {
+                      if (p.source) {
+                        window.open(p.source, '_blank')
+                      }
+                    }}
+                  >
+                    <div className="flex gap-3">
+                      <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-sky-500/20 to-teal-500/10 text-sky-500">
+                        <Globe className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium line-clamp-2 leading-tight">{p.name}</div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5">{p.brand}</Badge>
+                          <Badge variant="secondary" className="text-[10px] py-0 px-1.5 capitalize">{p.category}</Badge>
+                          {platform && (
+                            <Badge className="text-[10px] py-0 px-1.5 capitalize bg-sky-500/15 text-sky-600 dark:text-sky-400">{platform}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between gap-2">
+                      <div>
+                        {bestPrice > 0 && (
+                          <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                            ₹{bestPrice.toLocaleString('en-IN')}
+                          </div>
+                        )}
+                        {p.rating > 0 && (
+                          <div className="flex items-center gap-0.5 justify-end">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            <span className="text-xs font-semibold">{p.rating}</span>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={(e) => { e.stopPropagation(); setPendingChatInput(`Tell me about the ${p.name}. Is it worth buying?`); setActiveView('chat') }}
+                      >
+                        <Sparkles className="h-3 w-3 text-emerald-500" /> Ask AI
+                      </Button>
+                    </div>
+                    {p.pros?.length > 0 && (
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">
+                        ✓ {p.pros.slice(0, 2).join(' · ')}
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+          ) : debouncedSearch ? (
+            <div className="text-center py-8 text-xs text-muted-foreground">
+              {liveLoading ? 'Searching the web…' : 'No live results found. Try a different search term.'}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-xs text-muted-foreground">
+              Type a search query above to find real products from the web.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cached catalog */}
+      {!liveMode && (
+        <>
       {isLoading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
@@ -471,6 +651,8 @@ export function DiscoverView() {
             )
           })}
         </div>
+      )}
+        </>
       )}
     </div>
   )
