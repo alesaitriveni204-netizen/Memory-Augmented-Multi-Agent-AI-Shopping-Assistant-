@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "AI Shopping OS" }],
   icons: {
-    icon: "/logo.png",
+    icon: [{ url: '/logo.png', type: 'image/png', sizes: 'any' }],
   },
 };
 
