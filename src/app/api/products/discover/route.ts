@@ -255,7 +255,7 @@ Content: ${p.text}`
               basePrice: p.basePrice,
               rating: p.rating || 4.0,
               reviewCount: p.reviewCount || 0,
-              imageColor: "#10b981",
+              imageColor: "#4338ca",
               pros: JSON.stringify(p.pros || []),
               cons: JSON.stringify(p.cons || []),
               sentimentScore: 0.7,

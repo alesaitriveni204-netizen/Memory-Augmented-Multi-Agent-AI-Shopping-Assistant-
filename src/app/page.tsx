@@ -30,33 +30,32 @@ export default function Home() {
   const setUser = useAppStore((s) => s.setUser)
   const activeView = useAppStore((s) => s.activeView)
   const setChatMessages = useAppStore((s) => s.setChatMessages)
+  const setActiveChatSessionId = useAppStore((s) => s.setActiveChatSessionId)
+  const setChatSessions = useAppStore((s) => s.setChatSessions)
   const setNotifications = useAppStore((s) => s.setNotifications)
   const setUnreadCount = useAppStore((s) => s.setUnreadCount)
+  const initialSessionId = React.useRef<string | null>(null)
 
-  // Boot: fetch init + chat history + notifications in parallel
+  // Boot creates one fresh session per page load and never restores its messages.
   const { refetch: bootRefetch } = useQuery({
     queryKey: ['boot'],
     queryFn: async () => {
-      const [initRes, histRes, notifRes] = await Promise.all([
+      const sessionId = initialSessionId.current || `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      initialSessionId.current = sessionId
+      setActiveChatSessionId(sessionId)
+      setChatMessages([])
+      const [initRes, sessionsRes, notifRes] = await Promise.all([
         fetch('/api/init'),
-        fetch('/api/chat/history').catch(() => null),
+        fetch('/api/chat/sessions').catch(() => null),
         fetch('/api/notifications').catch(() => null),
       ])
       const initData = await initRes.json()
       setUser(initData.user)
 
-      if (histRes?.ok) {
-        const hist = await histRes.json()
-        if (hist.messages) {
-          setChatMessages(
-            hist.messages.map((m: Record<string, unknown>) => ({
-              id: String(m.id ?? Math.random()),
-              role: m.role as 'user' | 'assistant',
-              content: String(m.content ?? ''),
-              metadata: m.metadata as never,
-              createdAt: String(m.createdAt ?? new Date().toISOString()),
-            })),
-          )
+      if (sessionsRes?.ok) {
+        const sessionData = await sessionsRes.json()
+        if (sessionData.sessions) {
+          setChatSessions(sessionData.sessions)
         }
       }
       if (notifRes?.ok) {
@@ -87,61 +86,16 @@ export default function Home() {
     if (!booted) bootRefetch()
   }, [booted, bootRefetch])
 
-  // If user has just onboarded, push welcome message via chat
-  React.useEffect(() => {
-    if (booted && user?.hasOnboarded) {
-      // Auto-send a welcome message ONCE if chat is empty
-      const alreadyWelcomed = localStorage.getItem('asos-welcomed')
-      if (!alreadyWelcomed) {
-        localStorage.setItem('asos-welcomed', '1')
-        ;(async () => {
-          try {
-            const res = await fetch('/api/chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                message:
-                  "Hi! I've set up my Digital Persona Twin. Ask me to recommend something!",
-              }),
-            })
-            if (res.ok) {
-              const data = await res.json()
-              const histRes = await fetch('/api/chat/history')
-              if (histRes.ok) {
-                const hist = await histRes.json()
-                if (hist.messages) {
-                  setChatMessages(
-                    hist.messages.map((m: Record<string, unknown>) => ({
-                      id: String(m.id ?? Math.random()),
-                      role: m.role as 'user' | 'assistant',
-                      content: String(m.content ?? ''),
-                      metadata: m.metadata as never,
-                      createdAt: String(
-                        m.createdAt ?? new Date().toISOString(),
-                      ),
-                    })),
-                  )
-                }
-              }
-            }
-          } catch {
-            /* noop */
-          }
-        })()
-      }
-    }
-  }, [booted, user?.hasOnboarded, setChatMessages])
-
   const showOnboarding = booted && user && !user.hasOnboarded
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background">
       <Header />
 
       <div className="flex flex-1 min-h-0">
         {!showOnboarding && <Sidebar />}
 
-        <main className="flex-1 min-w-0 flex flex-col">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col">
           {bootError ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="text-center max-w-md">
@@ -173,7 +127,13 @@ export default function Home() {
               <OnboardingWizard />
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6 pb-20 md:pb-6">
+            <div
+              className={`flex-1 min-h-0 p-4 md:p-6 ${
+                activeView === 'chat'
+                  ? 'overflow-hidden'
+                  : 'overflow-y-auto scrollbar-thin pb-20 md:pb-6'
+              }`}
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeView}
@@ -181,7 +141,11 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="min-h-[calc(100vh-12rem)] h-full"
+                  className={
+                    activeView === 'chat'
+                      ? 'h-full min-h-0'
+                      : 'min-h-[calc(100vh-12rem)] h-full'
+                  }
                 >
                   {activeView === 'chat' && <ChatView />}
                   {activeView === 'discover' && <DiscoverView />}

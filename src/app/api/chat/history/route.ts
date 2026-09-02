@@ -1,4 +1,4 @@
-// GET /api/chat/history — returns last 50 chat messages
+// GET /api/chat/history — returns chat messages from the last 15 days
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateDemoUser } from "@/lib/session";
@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await getOrCreateDemoUser();
+    const since = new Date();
+    since.setDate(since.getDate() - 15);
     const messages = await db.chatMessage.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, createdAt: { gte: since } },
       orderBy: { createdAt: "asc" },
-      take: 50,
     });
 
     const parsed = messages.map((m) => {

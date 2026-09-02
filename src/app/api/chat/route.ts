@@ -23,7 +23,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  let body: { message?: string };
+  let body: { message?: string; sessionId?: string };
   try {
     body = await req.json();
   } catch (err: any) {
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
   if (!message) {
     return NextResponse.json({ error: "Missing 'message' field" }, { status: 400 });
   }
+  const sessionId = body.sessionId?.trim() || `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
     const user = await getOrCreateDemoUser();
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
 
     // 6. Persist ChatMessages
     const userMsg = await db.chatMessage.create({
-      data: { userId: user.id, role: "user", content: message },
+      data: { userId: user.id, sessionId, role: "user", content: message },
     });
 
     const metadata = {
@@ -132,6 +133,7 @@ export async function POST(req: Request) {
     const assistantMsg = await db.chatMessage.create({
       data: {
         userId: user.id,
+        sessionId,
         role: "assistant",
         content: response,
         metadata: JSON.stringify(metadata),
@@ -192,6 +194,7 @@ export async function POST(req: Request) {
       agentsUsed: plan.requiredAgents,
       messageId: assistantMsg.id,
       userMessageId: userMsg.id,
+      sessionId,
       contextResolved,
       referencedProduct,
       originalMessage: message,

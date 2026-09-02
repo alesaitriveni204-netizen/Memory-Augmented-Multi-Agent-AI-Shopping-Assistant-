@@ -24,9 +24,13 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/frontend/*": ["./src/frontend/*"],
+      "@/backend/*": ["./src/backend/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/components/*": ["./src/frontend/components/*"],
+      "@/hooks/*": ["./src/frontend/hooks/*"],
+      "@/lib/*": ["./src/backend/*", "./src/shared/*", "./src/frontend/*"]
     }
   },
   "include": [
