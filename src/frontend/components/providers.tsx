@@ -19,6 +19,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   )
 
+  React.useEffect(() => {
+    const savedPreference = window.localStorage.getItem('shopditto-reduce-motion')
+    const systemPreference = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const shouldReduceMotion = savedPreference === null
+      ? systemPreference
+      : savedPreference === 'true'
+
+    if (shouldReduceMotion) {
+      document.documentElement.dataset.reduceMotion = 'true'
+      return
+    }
+
+    delete document.documentElement.dataset.reduceMotion
+    if (window.sessionStorage.getItem('shopditto-intro-played')) return
+
+    window.sessionStorage.setItem('shopditto-intro-played', 'true')
+    document.documentElement.dataset.shopdittoIntro = 'true'
+    const introTimeout = window.setTimeout(() => {
+      delete document.documentElement.dataset.shopdittoIntro
+    }, 7000)
+
+    return () => window.clearTimeout(introTimeout)
+  }, [])
+
   return (
     <NextThemesProvider
       attribute="class"

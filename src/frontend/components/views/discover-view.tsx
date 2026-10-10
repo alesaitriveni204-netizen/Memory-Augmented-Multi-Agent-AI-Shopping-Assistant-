@@ -12,6 +12,7 @@ import { EmptyState, LoadingState, ProductCardSkeleton } from '@/components/comm
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import {
+  ALL_PLATFORMS,
   ALL_CATEGORIES,
   formatINR,
   platformColor,
@@ -64,6 +65,7 @@ export function DiscoverView() {
   const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 250000])
   const [minRating, setMinRating] = React.useState(0)
   const [selectedBrands, setSelectedBrands] = React.useState<string[]>([])
+  const [selectedPlatforms, setSelectedPlatforms] = React.useState<string[]>([])
   const [sortBy, setSortBy] = React.useState<'relevance' | 'price-low' | 'price-high' | 'rating' | 'discount' | 'name'>('relevance')
   const setActiveView = useAppStore((s) => s.setActiveView)
   const setPendingChatInput = useAppStore((s) => s.setPendingChatInput)
@@ -111,6 +113,11 @@ export function DiscoverView() {
     if (selectedBrands.length > 0) {
       result = result.filter((p) => selectedBrands.includes(p.brand))
     }
+    if (selectedPlatforms.length > 0) {
+      result = result.filter((p) =>
+        p.platformPrices?.some((price) => selectedPlatforms.includes(price.platform)),
+      )
+    }
     // Apply sorting
     const sorted = [...result]
     switch (sortBy) {
@@ -131,14 +138,15 @@ export function DiscoverView() {
         break
     }
     return sorted
-  }, [data, priceRange, minRating, selectedBrands, sortBy])
+  }, [data, priceRange, minRating, selectedBrands, selectedPlatforms, sortBy])
 
-  const activeFilterCount = (priceRange[0] > 0 || priceRange[1] < 250000 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (selectedBrands.length > 0 ? 1 : 0)
+  const activeFilterCount = (priceRange[0] > 0 || priceRange[1] < 250000 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (selectedBrands.length > 0 ? 1 : 0) + (selectedPlatforms.length > 0 ? 1 : 0)
 
   function clearFilters() {
     setPriceRange([0, 250000])
     setMinRating(0)
     setSelectedBrands([])
+    setSelectedPlatforms([])
   }
 
   // Live discovery state
@@ -276,6 +284,27 @@ export function DiscoverView() {
               {c}
             </button>
           ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2" aria-label="Filter by marketplace">
+          <span className="text-[11px] text-muted-foreground">Marketplace</span>
+          {ALL_PLATFORMS.map((platform) => {
+            const selected = selectedPlatforms.includes(platform)
+            const color = platformColor(platform)
+            return (
+              <button
+                key={platform}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setSelectedPlatforms((current) => selected ? current.filter((value) => value !== platform) : [...current, platform])}
+                className={cn('inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-[11px] transition-colors', selected ? 'border-current bg-muted font-medium text-foreground' : 'border-border/70 text-muted-foreground hover:bg-muted')}
+                style={{ borderColor: selected ? color : undefined }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
+                {platformLabel(platform)}
+              </button>
+            )
+          })}
         </div>
 
         {/* Advanced filters toggle + panel */}
@@ -438,11 +467,11 @@ export function DiscoverView() {
           </div>
 
           {liveLoading ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : liveProducts.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {liveProducts.map((p, i) => {
                 const bestPrice = p.platformPrices?.[0]?.price || p.basePrice || 0
                 const platform = p.platformPrices?.[0]?.platform || "web"
@@ -522,7 +551,7 @@ export function DiscoverView() {
       {!liveMode && (
         <>
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
         </div>
       ) : products.length === 0 ? (
@@ -531,7 +560,7 @@ export function DiscoverView() {
           description="Try a different search or category filter."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((p, i) => {
             const best =
               p.platformPrices?.length > 0
@@ -545,15 +574,15 @@ export function DiscoverView() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
-                className="rounded-xl border border-border/60 bg-card p-3 flex flex-col gap-2 hover:border-emerald-500/40 transition-all hover:shadow-md hover:shadow-emerald-500/10 hover:-translate-y-0.5 asos-card-lift cursor-pointer"
+                className="min-w-0 rounded-md border border-border/60 bg-card p-2.5 flex flex-col gap-2 transition-all hover:border-cs-primary-solid/40 hover:shadow-md hover:-translate-y-0.5 asos-card-lift cursor-pointer"
                 onClick={() => openProductDetail(p.id)}
               >
-                <div className="flex gap-3">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:gap-3">
                   <ProductVisual
                     name={p.name}
                     brand={p.brand}
                     imageColor={p.imageColor}
-                    size={64}
+                    size={48}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium line-clamp-2 leading-tight">

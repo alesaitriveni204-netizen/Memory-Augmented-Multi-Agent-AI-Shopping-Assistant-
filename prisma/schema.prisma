@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma-shopditto"
 }
 
 datasource db {
@@ -18,8 +19,11 @@ model User {
   id              String   @id @default(cuid())
   name            String
   email           String   @unique
+  passwordHash    String?
   // Onboarding questionnaire (JSON)
   onboarding      String?  // { categories, budget, brands, platforms, frequency, discountImportance, deliverySpeed, techFamiliarity, lifestyle }
+  onboardingCompleted Boolean @default(false)
+  onboardingCompletedAt DateTime?
   personaCluster  String?  // DPT cluster: budget-conscious | premium | student | fashion | family | techie
   twinConfidence  Int      @default(0) // 0-100, how accurate the DToC is
   // Digital Twin of the Customer (DToC) — evolving behavioral representation (JSON)
@@ -37,6 +41,30 @@ model User {
   timelineEvents  TimelineEvent[]
   connectedAccounts ConnectedAccount[]
   recommendations  Recommendation[]
+  authSessions      AuthSession[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../node_modules/.prisma-shopditto');
 
 const db = new PrismaClient();
 

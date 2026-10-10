@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Orbis — Memory-Augmented Shopping Intelligence",
+  title: "shopDitto — AI Shopping Assistant",
   description:
-    "Memory-Augmented Multi-Agent Cross-Platform Shopping Intelligence Platform. Your Digital Persona Twin remembers what you love.",
+    "shopDitto is your AI shopping assistant, helping you find products, compare options, and get personalized recommendations.",
   keywords: [
     "AI Shopping",
     "Digital Twin",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "Cross-Platform",
     "Shopping Intelligence",
   ],
-  authors: [{ name: "AI Shopping OS" }],
+  authors: [{ name: "shopDitto" }],
   icons: {
     icon: [{ url: '/logo.png', type: 'image/png', sizes: 'any' }],
   },

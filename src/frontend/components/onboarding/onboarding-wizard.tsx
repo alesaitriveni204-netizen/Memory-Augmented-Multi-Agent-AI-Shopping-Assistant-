@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Progress } from '@/components/ui/progress'
+import { ShopDittoMark } from '@/components/shell/orbis-logo'
 import { useAppStore } from '@/lib/store'
 import { ALL_CATEGORIES, ALL_BRANDS, ALL_PLATFORMS } from '@/lib/ui-utils'
 import { cn } from '@/lib/utils'
@@ -179,13 +180,11 @@ export function OnboardingWizard() {
           >
             {step === 0 && (
               <div className="text-center space-y-4">
-                <div className="relative h-20 w-20 mx-auto overflow-hidden rounded-2xl shadow-lg ring-2 ring-emerald-500/20">
-                  <img src="/logo.png" alt="AI Shopping OS" className="h-full w-full object-cover" />
-                </div>
+                <ShopDittoMark className="mx-auto h-20 w-20" />
                 <div>
                   <h2 className="text-2xl font-bold">
                     Welcome to{' '}
-                    <span className="asos-text-shimmer">AI Shopping OS</span>
+                    <span className="asos-text-shimmer">shopDitto</span>
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
                     A memory-augmented, multi-agent shopping copilot that learns

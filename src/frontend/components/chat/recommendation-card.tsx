@@ -130,7 +130,7 @@ export function RecommendationCard({
             <div className="mt-2 flex items-end justify-between gap-2">
               <div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold text-teal-600 dark:text-teal-300">
+                  <span className="text-lg font-bold tabular-nums text-foreground">
                     {formatINR(rec.bestPrice)}
                   </span>
                   {rec.mrp > rec.bestPrice && (
@@ -180,7 +180,7 @@ export function RecommendationCard({
             variant={added ? 'secondary' : 'default'}
             onClick={addToWishlist}
             disabled={adding || added}
-            className="h-8 bg-[#4338CA] text-xs text-white hover:bg-[#3730A3]"
+            className="h-8 text-xs"
           >
             {added ? (
               <>
@@ -195,7 +195,7 @@ export function RecommendationCard({
           <Button
             size="sm"
             variant={inCompare ? 'default' : 'outline'}
-            className={`h-8 text-xs ${inCompare ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+            className="h-8 text-xs"
             onClick={() => {
               if (inCompare) {
                 setCompareOpen(true)

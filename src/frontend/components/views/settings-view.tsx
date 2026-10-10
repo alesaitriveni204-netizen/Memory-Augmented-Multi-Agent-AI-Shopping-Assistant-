@@ -10,6 +10,8 @@ import {
   Info,
   ShieldCheck,
   Database,
+  LogOut,
+  Pencil,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -49,16 +51,54 @@ interface ConnectedAccount {
   connectedAt: string | null
 }
 
+function subscribeMotionPreference(onChange: () => void) {
+  window.addEventListener('shopditto-motion-change', onChange)
+  return () => window.removeEventListener('shopditto-motion-change', onChange)
+}
+
+function getMotionPreference() {
+  return document.documentElement.dataset.reduceMotion === 'true'
+}
+
+function getServerMotionPreference() {
+  return false
+}
+
 export function SettingsView() {
   const qc = useQueryClient()
   const user = useAppStore((s) => s.user)
   const updateUser = useAppStore((s) => s.updateUser)
+  const clearSessionState = useAppStore((s) => s.clearSessionState)
+  const reduceMotion = React.useSyncExternalStore(
+    subscribeMotionPreference,
+    getMotionPreference,
+    getServerMotionPreference,
+  )
+
+  function toggleReducedMotion(enabled: boolean) {
+    window.localStorage.setItem('shopditto-reduce-motion', String(enabled))
+    if (enabled) {
+      document.documentElement.dataset.reduceMotion = 'true'
+    } else {
+      delete document.documentElement.dataset.reduceMotion
+    }
+    window.dispatchEvent(new Event('shopditto-motion-change'))
+  }
 
   const { data } = useQuery<{ accounts: ConnectedAccount[] }>({
     queryKey: ['accounts'],
     queryFn: async () => {
       const res = await fetch('/api/accounts')
       return res.json()
+    },
+  })
+
+  const { data: preferenceData } = useQuery<{ preferences: Record<string, unknown> | null }>({
+    queryKey: ['onboarding-preferences'],
+    queryFn: async () => {
+      const response = await fetch('/api/onboarding')
+      if (!response.ok) throw new Error('Could not load shopping preferences')
+      return response.json()
     },
   })
 
@@ -180,6 +220,21 @@ export function SettingsView() {
     }
   }
 
+  async function logout() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' })
+      if (!response.ok) throw new Error('Could not end session')
+      clearSessionState()
+      window.location.assign('/login')
+    } catch {
+      toast.error('Could not sign out. Please try again.')
+    }
+  }
+
+  function editPreferences() {
+    updateUser({ hasOnboarded: false })
+  }
+
   const accounts = data?.accounts || []
 
   return (
@@ -192,6 +247,23 @@ export function SettingsView() {
           Manage connected accounts, personalization, and your data.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Motion</CardTitle>
+          <CardDescription className="text-xs">
+            Reduce ribbon animation and glow effects. Your device accessibility preference is respected.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <Label htmlFor="reduce-ribbon-motion" className="text-sm">Reduce ribbon animations</Label>
+          <Switch
+            id="reduce-ribbon-motion"
+            checked={reduceMotion}
+            onCheckedChange={toggleReducedMotion}
+          />
+        </CardContent>
+      </Card>
 
       {/* Connected Accounts */}
       <Card>
@@ -257,6 +329,37 @@ export function SettingsView() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/50 p-3">
+            <div>
+              <div className="text-sm font-medium">My Shopping Preferences</div>
+              <p className="text-[11px] text-muted-foreground">Edit the choices used to shape your Digital Twin.</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={editPreferences}>
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
+          </div>
+          <div className="rounded-lg bg-muted/35 p-3">
+            <div className="mb-2 text-xs font-semibold">What does AI remember about me?</div>
+            <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
+              {(() => {
+                const preferences = preferenceData?.preferences
+                const categories = Array.isArray(preferences?.categories) ? preferences.categories as string[] : []
+                const brands = Array.isArray(preferences?.brands) ? preferences.brands as string[] : []
+                const priorities = Array.isArray(preferences?.purchasePriorities) ? preferences.purchasePriorities as string[] : []
+                const summaries = [
+                  ...categories.map((value) => `Category: ${value}`),
+                  ...brands.map((value) => `Brand: ${value}`),
+                  typeof preferences?.budgetRangeLabel === 'string' ? `Budget: ${preferences.budgetRangeLabel}` : null,
+                  typeof preferences?.shoppingStyle === 'string' ? `Style: ${preferences.shoppingStyle}` : null,
+                  ...priorities.slice(0, 3).map((value) => `Priority: ${value}`),
+                ].filter((value): value is string => Boolean(value))
+                return summaries.length
+                  ? summaries.map((summary) => <span key={summary} className="rounded-md border border-border/60 bg-background/60 px-2 py-1">{summary}</span>)
+                  : <span>No shopping preferences saved yet.</span>
+              })()}
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">You can edit these choices, disable personalization, or clear stored memories below.</p>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm">Memory Enabled</Label>
@@ -343,13 +446,26 @@ export function SettingsView() {
       {/* About */}
       <Card>
         <CardHeader>
+          <CardTitle className="text-sm">Account</CardTitle>
+          <CardDescription className="text-xs">Signed in as {user?.email}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button size="sm" variant="outline" onClick={logout}>
+            <LogOut className="h-3.5 w-3.5" /> Sign out
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* About */}
+      <Card>
+        <CardHeader>
           <CardTitle className="text-sm flex items-center gap-1.5">
             <Info className="h-4 w-4 text-emerald-500" /> About
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-xs text-muted-foreground">
           <p>
-            <strong className="text-foreground">AI Shopping OS</strong> — a
+            <strong className="text-foreground">shopDitto</strong> — an AI
             Memory-Augmented Multi-Agent Cross-Platform Shopping Intelligence
             Platform.
           </p>

@@ -3,17 +3,58 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateDemoUser } from "@/lib/session";
 import { clusterPersona, buildInitialTwin } from "@/lib/persona";
+import { llmJson } from "@/lib/llm";
 import type { OnboardingData } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BUDGET_MAP: Record<string, number> = {
-  low: 30000,
-  mid: 60000,
-  high: 120000,
-  premium: 250000,
+  low: 5000,
+  mid: 15000,
+  high: 50000,
+  premium: 80000,
+  "under-5000": 2500,
+  "5000-15000": 10000,
+  "15000-30000": 22500,
+  "30000-50000": 40000,
+  "50000-80000": 65000,
+  "80000-plus": 100000,
 };
+
+async function extractNotePreferences(notes: string | undefined) {
+  if (!notes?.trim()) return { categories: [] as string[], brands: [] as string[], habits: [] as string[] };
+  const extracted = await llmJson<{ categories?: unknown; brands?: unknown; habits?: unknown }>(
+    "Extract only explicit shopping preferences from the user's note. Return JSON with categories, brands, and habits arrays of short strings. Do not infer demographic traits or sensitive attributes.",
+    notes.trim().slice(0, 1000),
+    { temperature: 0 },
+  );
+  const clean = (value: unknown) => Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim().slice(0, 60)).filter(Boolean).slice(0, 8)
+    : [];
+  return {
+    categories: clean(extracted?.categories),
+    brands: clean(extracted?.brands),
+    habits: clean(extracted?.habits),
+  };
+}
+
+export async function GET() {
+  try {
+    const user = await getOrCreateDemoUser();
+    let preferences: OnboardingData | null = null;
+    if (user.onboarding) {
+      try {
+        preferences = JSON.parse(user.onboarding) as OnboardingData;
+      } catch {
+        preferences = null;
+      }
+    }
+    return NextResponse.json({ preferences, hasOnboarded: user.onboardingCompleted });
+  } catch {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+}
 
 export async function POST(req: Request) {
   let data: OnboardingData;
@@ -37,9 +78,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const cluster = clusterPersona(data);
-    const twin = buildInitialTwin(cluster, data);
-    const budgetValue = BUDGET_MAP[data.budgetRange] ?? 60000;
+    const notePreferences = await extractNotePreferences(data.onboardingNotes);
+    const normalizedData: OnboardingData = {
+      ...data,
+      categories: [...new Set([...data.categories, ...notePreferences.categories])],
+      brands: [...new Set([...data.brands, ...notePreferences.brands])],
+    };
+    const cluster = clusterPersona(normalizedData);
+    const twin = buildInitialTwin(cluster, normalizedData);
+    const budgetValue = BUDGET_MAP[data.budgetRangeLabel ?? ""] ?? BUDGET_MAP[data.budgetRange] ?? 60000;
+    const memoryEnabled = data.personalizationConsent !== "minimal";
 
     const updated = await db.user.update({
       where: { id: user.id },
@@ -47,9 +95,11 @@ export async function POST(req: Request) {
         personaCluster: cluster,
         digitalTwin: JSON.stringify(twin),
         twinConfidence: 20,
-        onboarding: JSON.stringify(data),
-        personalizationEnabled: true,
-        memoryEnabled: true,
+        onboarding: JSON.stringify({ ...normalizedData, notePreferences }),
+        onboardingCompleted: true,
+        onboardingCompletedAt: new Date(),
+        personalizationEnabled: data.personalizationConsent !== "minimal",
+        memoryEnabled,
       },
     });
 
@@ -69,7 +119,7 @@ export async function POST(req: Request) {
         type: "long_term",
         category: "brand",
         key: "preferred_brands",
-        value: JSON.stringify(data.brands),
+        value: JSON.stringify(normalizedData.brands),
         confidence: 85,
         source: "onboarding",
       },
@@ -77,7 +127,7 @@ export async function POST(req: Request) {
         type: "long_term",
         category: "category",
         key: "preferred_categories",
-        value: JSON.stringify(data.categories),
+        value: JSON.stringify(normalizedData.categories),
         confidence: 85,
         source: "onboarding",
       },
@@ -109,13 +159,53 @@ export async function POST(req: Request) {
         type: "long_term",
         category: "preference",
         key: "discount_preference",
-        value: String(data.discountImportance ?? 3),
+        value: String(twin.discountPreference),
         confidence: 75,
         source: "onboarding",
       },
+      {
+        type: "long_term",
+        category: "preference",
+        key: "purchase_priorities",
+        value: JSON.stringify(data.purchasePriorities ?? []),
+        confidence: 85,
+        source: "onboarding",
+      },
+      {
+        type: "long_term",
+        category: "habit",
+        key: "shopping_style",
+        value: data.shoppingStyle ?? twin.shoppingStyle,
+        confidence: 80,
+        source: "onboarding",
+      },
+      {
+        type: "long_term",
+        category: "habit",
+        key: "comparison_frequency",
+        value: data.comparisonFrequency ?? "sometimes",
+        confidence: 75,
+        source: "onboarding",
+      },
+      ...(data.onboardingNotes?.trim() ? [{
+        type: "long_term",
+        category: "preference",
+        key: "onboarding_notes",
+        value: data.onboardingNotes.trim().slice(0, 1000),
+        confidence: 60,
+        source: "onboarding",
+      }] : []),
+      ...notePreferences.habits.map((habit) => ({
+        type: "long_term",
+        category: "habit",
+        key: `onboarding_note_${habit.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 32)}`,
+        value: habit,
+        confidence: 60,
+        source: "onboarding",
+      })),
     ];
 
-    for (const mem of initialMemories) {
+    for (const mem of memoryEnabled ? initialMemories : []) {
       const existing = await db.memory.findFirst({
         where: { userId: user.id, key: mem.key, category: mem.category },
       });
@@ -159,7 +249,7 @@ export async function POST(req: Request) {
         twinConfidence: updated.twinConfidence,
         memoryEnabled: updated.memoryEnabled,
         personalizationEnabled: updated.personalizationEnabled,
-        hasOnboarded: !!(updated.onboarding && updated.personaCluster),
+        hasOnboarded: updated.onboardingCompleted,
       },
       personaCluster: cluster,
       twin,

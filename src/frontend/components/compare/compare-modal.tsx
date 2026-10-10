@@ -5,7 +5,7 @@ import { useAppStore, type CompareItem } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle, Sparkles, Loader2, Crown, History, Clock } from 'lucide-react'
+import { X, Trophy, TrendingDown, TrendingUp, Minus, Star, ShoppingCart, ExternalLink, Trash2, Check, AlertCircle, Sparkles, Loader2, Crown, History, Clock, GitCompare } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { platformLabel, formatINR, scoreColor } from '@/lib/ui-utils'
 import { Sparkline } from '@/components/common/sparkline'
@@ -25,6 +25,7 @@ export function CompareModal() {
   const setOpen = useAppStore((s) => s.setCompareOpen)
   const removeFromCompare = useAppStore((s) => s.removeFromCompare)
   const clearCompare = useAppStore((s) => s.clearCompare)
+  const setActiveView = useAppStore((s) => s.setActiveView)
   const { history, saveComparison, deleteComparison } = useComparisonHistory()
   const [showHistory, setShowHistory] = React.useState(false)
 
@@ -226,15 +227,24 @@ export function CompareModal() {
           </AnimatePresence>
 
           {items.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center p-12">
+            <div className="flex-1 flex items-center justify-center p-6 md:p-12">
               <div className="text-center space-y-3">
-                <div className="grid h-16 w-16 mx-auto place-items-center rounded-2xl bg-muted/40 text-muted-foreground">
-                  <Trophy className="h-8 w-8" />
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-muted/40">
+                  <svg viewBox="0 0 40 40" className="h-12 w-12" aria-hidden="true">
+                    <path d="M20 4 A16 16 0 0 1 35.2 15" fill="none" stroke="#FF9900" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M35.2 15 A16 16 0 0 1 29.4 33" fill="none" stroke="#2874F0" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M29.4 33 A16 16 0 0 1 10.6 33" fill="none" stroke="#95BF47" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M10.6 33 A16 16 0 0 1 4.8 15" fill="none" stroke="#E53238" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M4.8 15 A16 16 0 0 1 20 4" fill="none" stroke="#FF3F6C" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
                 </div>
-                <h3 className="font-semibold text-lg">No products to compare yet</h3>
+                <h3 className="font-semibold text-lg">Add products to compare</h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Click the <span className="font-medium text-emerald-500">Compare</span> button on any product recommendation to add it here. You can compare up to 4 products side-by-side.
+                  Compare prices, specs, delivery, and ratings across your shortlist. Add up to four products.
                 </p>
+                <Button onClick={() => { setOpen(false); setActiveView('discover') }}>
+                  <GitCompare className="h-4 w-4" /> Discover products
+                </Button>
               </div>
             </div>
           ) : (

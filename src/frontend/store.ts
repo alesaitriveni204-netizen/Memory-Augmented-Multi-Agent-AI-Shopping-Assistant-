@@ -37,6 +37,7 @@ export interface ChatMessage {
 export interface ChatSession {
   id: string
   title: string
+  searchText?: string
   messageCount: number
   updatedAt: string
   createdAt: string
@@ -118,6 +119,7 @@ interface AppState {
   // User
   user: UserState | null
   setUser: (u: UserState | null) => void
+  clearSessionState: () => void
   updateUser: (patch: Partial<UserState>) => void
 
   // Navigation
@@ -194,6 +196,25 @@ export const useAppStore = create<AppState>((set) => ({
 
   user: null,
   setUser: (user) => set({ user }),
+  clearSessionState: () => set({
+    user: null,
+    booted: false,
+    bootError: null,
+    activeView: 'chat',
+    chatMessages: [],
+    activeChatSessionId: null,
+    chatSessions: [],
+    chatLoading: false,
+    pendingChatInput: null,
+    notifications: [],
+    unreadCount: 0,
+    mobileNavOpen: false,
+    notifOpen: false,
+    compareItems: [],
+    compareOpen: false,
+    productDetailId: null,
+    productDetailOpen: false,
+  }),
   updateUser: (patch) =>
     set((s) => (s.user ? { user: { ...s.user, ...patch } } : {})),
 

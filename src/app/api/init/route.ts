@@ -19,10 +19,13 @@ export async function GET() {
         twinConfidence: user.twinConfidence,
         memoryEnabled: user.memoryEnabled,
         personalizationEnabled: user.personalizationEnabled,
-        hasOnboarded: !!(user.onboarding && user.personaCluster),
+        hasOnboarded: user.onboardingCompleted,
       },
     });
   } catch (err: any) {
+    if (err?.message === "UNAUTHENTICATED") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
     console.error("[api/init] error:", err);
     return NextResponse.json(
       { error: "Failed to initialize session", detail: err?.message ?? String(err) },

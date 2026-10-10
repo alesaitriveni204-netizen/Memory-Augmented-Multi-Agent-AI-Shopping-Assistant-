@@ -98,19 +98,19 @@ export function clusterPersona(data: OnboardingData): PersonaCluster {
   };
 
   // Budget range
-  if (data.budgetRange === "low") {
+  if (["low", "under-5000", "5000-15000"].includes(data.budgetRange)) {
     scores["budget-conscious"] += 3;
     scores["student-shopper"] += 2;
     scores["family-shopper"] += 1;
-  } else if (data.budgetRange === "mid") {
+  } else if (["mid", "15000-30000", "30000-50000"].includes(data.budgetRange)) {
     scores["student-shopper"] += 2;
     scores["family-shopper"] += 2;
     scores["fashion-enthusiast"] += 2;
-  } else if (data.budgetRange === "high") {
+  } else if (["high", "50000-80000"].includes(data.budgetRange)) {
     scores["fashion-enthusiast"] += 2;
     scores["tech-enthusiast"] += 3;
     scores["premium-buyer"] += 2;
-  } else if (data.budgetRange === "premium") {
+  } else if (["premium", "80000-plus"].includes(data.budgetRange)) {
     scores["premium-buyer"] += 4;
     scores["tech-enthusiast"] += 2;
   }
@@ -129,10 +129,10 @@ export function clusterPersona(data: OnboardingData): PersonaCluster {
   }
 
   // Discount importance
-  if (data.discountImportance >= 4) {
+  if (data.budgetStyle === "discounts" || data.discountImportance >= 4) {
     scores["budget-conscious"] += 3;
     scores["student-shopper"] += 2;
-  } else if (data.discountImportance <= 2) {
+  } else if (data.budgetStyle === "premium" || data.discountImportance <= 2) {
     scores["premium-buyer"] += 3;
   }
 
@@ -154,7 +154,7 @@ export function clusterPersona(data: OnboardingData): PersonaCluster {
   }
 
   // Lifestyle
-  const life = data.lifestyle.toLowerCase();
+  const life = (data.lifestyle ?? "").toLowerCase();
   if (life.includes("student") || life.includes("college")) {
     scores["student-shopper"] += 3;
   }
@@ -190,22 +190,76 @@ export function buildInitialTwin(
   data: OnboardingData
 ): DigitalTwin {
   const base = CLUSTERS[cluster];
+  const budgetFlexibilityByStyle: Record<string, number> = {
+    fixed: 20,
+    value: 55,
+    discounts: 40,
+    premium: 90,
+    depends: 55,
+  };
+  const comparisonByFrequency: Record<string, number> = {
+    never: 0,
+    sometimes: 35,
+    often: 70,
+    "almost always": 100,
+  };
+  const adoptionByBrandTrial: Record<string, number> = {
+    always: 95,
+    sometimes: 65,
+    rarely: 30,
+    never: 10,
+  };
+  const budgetStyle = data.budgetStyle ?? "depends";
+  const budgetFlexibility = budgetFlexibilityByStyle[budgetStyle] ?? base.budgetFlexibility ?? 50;
+  const priceSensitivity = budgetStyle === "fixed"
+    ? 90
+    : budgetStyle === "discounts"
+      ? 85
+      : budgetStyle === "premium"
+        ? 20
+        : budgetStyle === "value"
+          ? 70
+          : 50;
+  const technologyAdoption = data.technologyAdoption
+    ?? adoptionByBrandTrial[data.tryNewBrands ?? ""]
+    ?? base.technologyAdoption
+    ?? 50;
+  const discountPreference = budgetStyle === "discounts"
+    ? 95
+    : budgetStyle === "premium"
+      ? 20
+      : budgetStyle === "value"
+        ? 65
+        : Math.round(((data.discountImportance - 1) / 4) * 100);
+  const comparisonFrequency = comparisonByFrequency[data.comparisonFrequency ?? ""]
+    ?? base.comparisonFrequency
+    ?? 50;
+  const riskScore = data.riskToleranceScore;
+  const riskTolerance = riskScore === undefined
+    ? base.riskTolerance ?? "medium"
+    : riskScore < 34 ? "low" : riskScore < 67 ? "medium" : "high";
+
   return {
-    shoppingStyle: base.shoppingStyle ?? "Balanced",
-    budgetFlexibility: base.budgetFlexibility ?? 50,
-    brandLoyalty: base.brandLoyalty ?? 50,
-    priceSensitivity: base.priceSensitivity ?? 50,
+    shoppingStyle: data.shoppingStyle ?? base.shoppingStyle ?? "Balanced",
+    budgetFlexibility,
+    brandLoyalty: data.brandImportance ?? base.brandLoyalty ?? 50,
+    priceSensitivity,
     purchaseConfidence: base.purchaseConfidence ?? 50,
-    technologyAdoption: base.technologyAdoption ?? 50,
+    technologyAdoption,
     impulseBuyingScore: base.impulseBuyingScore ?? 30,
-    discountPreference: base.discountPreference ?? 50,
-    comparisonFrequency: base.comparisonFrequency ?? 50,
+    discountPreference,
+    comparisonFrequency,
     shoppingConsistency: base.shoppingConsistency ?? 60,
     preferredCategories: data.categories,
     preferredBrands: data.brands,
     preferredPlatforms: data.platforms,
-    riskTolerance: base.riskTolerance ?? "medium",
+    riskTolerance,
     lifestyle: data.lifestyle,
+    budgetRange: data.budgetRange,
+    purchasePriorities: data.purchasePriorities ?? [],
+    comparisonFrequencyLabel: data.comparisonFrequency,
+    shoppingFrequency: data.shoppingFrequency,
+    dealSeekingBehavior: data.budgetStyle,
   };
 }
 

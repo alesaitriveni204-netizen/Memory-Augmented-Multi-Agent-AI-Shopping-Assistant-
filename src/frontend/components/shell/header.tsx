@@ -32,6 +32,8 @@ export function Header() {
   const setPendingChatInput = useAppStore((s) => s.setPendingChatInput)
   const [query, setQuery] = React.useState('')
 
+  const visibleNotifications = notifications.filter((n) => !n.read)
+
   const persona = user?.personaCluster
     ? PERSONA_LABELS[user.personaCluster]
     : null
@@ -84,11 +86,14 @@ export function Header() {
       {/* Subtle gradient accent line */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
       <div className="flex h-16 items-center gap-3 px-3 md:px-6">
-        <div className="flex items-center gap-2 min-w-0">
-          <OrbisLogo />
-          <div className="min-w-0 hidden sm:block">
-            <div className="text-[10px] text-muted-foreground leading-tight truncate">
-              Shopping intelligence, remembered
+        <div className="shopditto-brand-panel flex items-center gap-2 rounded-xl px-2.5 py-1.5 min-w-0">
+          <OrbisLogo animated />
+          <div className="hidden min-w-0 border-l border-border/70 pl-2.5 sm:block">
+            <div className="shopditto-spectrum-text text-[10px] font-semibold leading-tight truncate">
+              Shopping intelligence
+            </div>
+            <div className="text-[9px] text-muted-foreground leading-tight truncate">
+              remembered
             </div>
           </div>
         </div>
@@ -111,13 +116,13 @@ export function Header() {
                   askOrbis()
                 }
               }}
-              placeholder="Ask Orbis anything..."
-              aria-label="Ask Orbis anything"
+              placeholder="Ask shopDitto anything..."
+              aria-label="Ask shopDitto anything"
               className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             />
             <button
               type="submit"
-              aria-label="Send question to Orbis"
+              aria-label="Send question to shopDitto"
               className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-teal-500 transition-colors hover:bg-teal-500/10"
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -160,43 +165,55 @@ export function Header() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-              <div className="flex items-center justify-between border-b px-3 py-2">
-                <div className="text-sm font-semibold">Notifications</div>
+            <PopoverContent
+              align="end"
+              sideOffset={10}
+              className="w-[min(100vw-24px,420px)] max-w-[420px] overflow-hidden rounded-2xl border border-border/70 bg-popover/95 p-0 shadow-[0_18px_48px_-22px_rgba(0,0,0,0.65)] backdrop-blur-xl"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/70 bg-popover/95 px-3 py-2.5 backdrop-blur-xl">
+                <div className="text-sm font-semibold text-foreground">Notifications</div>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="text-xs text-emerald-600 hover:underline dark:text-emerald-400"
+                    className="text-[11px] font-medium text-emerald-600 transition-colors hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300"
                   >
                     Mark all read
                   </button>
                 )}
               </div>
-              <ScrollArea className="max-h-96">
+
+              <ScrollArea className="max-h-[min(72vh,560px)]">
                 <div className="flex flex-col">
-                  {notifications.length === 0 && (
-                    <div className="px-3 py-8 text-center text-xs text-muted-foreground">
-                      No notifications yet
+                  {visibleNotifications.length === 0 && (
+                    <div className="px-4 py-10 text-center text-xs text-muted-foreground">
+                      No unread notifications
                     </div>
                   )}
-                  {notifications.map((n) => (
+
+                  {visibleNotifications.map((n) => (
                     <button
                       key={n.id}
                       onClick={() => markOneRead(n)}
-                      className="border-b px-3 py-2.5 text-left transition-colors hover:bg-muted/50 last:border-0"
+                      className={[
+                        'w-full border-b border-border/60 px-3 py-3 text-left transition-colors last:border-0',
+                        !n.read ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/60',
+                      ].join(' ')}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2.5">
                         {!n.read && (
-                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-medium truncate">
+                          <div className={[
+                            'text-sm font-medium leading-5 text-foreground',
+                            n.read ? 'text-foreground/90' : 'text-foreground',
+                          ].join(' ')}>
                             {n.title}
                           </div>
-                          <div className="text-[11px] text-muted-foreground line-clamp-2">
+                          <div className="mt-1 text-[11px] leading-5 text-muted-foreground">
                             {n.message}
                           </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                          <div className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/80">
                             {relativeTime(n.createdAt)}
                           </div>
                         </div>

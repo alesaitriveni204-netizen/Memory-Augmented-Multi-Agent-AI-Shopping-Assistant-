@@ -4,17 +4,21 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Map the existing emerald UI tokens to Orbis logo indigo. */
-  --color-emerald-50: #eef2ff;
-  --color-emerald-100: #e0e7ff;
-  --color-emerald-200: #c7d2fe;
-  --color-emerald-300: #a5b4fc;
-  --color-emerald-400: #818cf8;
-  --color-emerald-500: #4338ca;
-  --color-emerald-600: #3730a3;
-  --color-emerald-700: #312e81;
-  --color-emerald-800: #1e1b4b;
-  --color-emerald-900: #1e1b4b;
+  --color-emerald-50: #eff9f2;
+  --color-emerald-100: #d8efdf;
+  --color-emerald-200: #b6dfc2;
+  --color-emerald-300: #8ccba0;
+  --color-emerald-400: #5eb77c;
+  --color-emerald-500: #2e9e5b;
+  --color-emerald-600: #23804a;
+  --color-emerald-700: #1e653d;
+  --color-emerald-800: #194f32;
+  --color-emerald-900: #143f29;
+  --color-cs-primary-solid: var(--cs-primary-solid);
+  --color-cs-success: var(--cs-success);
+  --color-cs-error: var(--cs-error);
+  --color-cs-warning: var(--cs-warning);
+  --color-cs-info: var(--cs-info);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -56,71 +60,90 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.696 0.17 162.48);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.95 0.05 162.48);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.696 0.17 162.48);
-  --chart-1: oklch(0.696 0.17 162.48);
-  --chart-2: oklch(0.769 0.188 70.08);
-  --chart-3: oklch(0.627 0.265 303.9);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.696 0.17 162.48);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.696 0.17 162.48);
+  --cs-ring-gradient: conic-gradient(from 0deg, #FF9900, #2874F0, #95BF47, #E53238, #FF3F6C, #FF9900);
+  --cs-primary-solid: #B36B00;
+  --cs-success: #2E9E5B;
+  --cs-error: #D92D20;
+  --cs-warning: #F59E0B;
+  --cs-info: #2E90FA;
+  --cs-amazon: #FF9900;
+  --cs-flipkart: #2874F0;
+  --cs-shopify: #95BF47;
+  --cs-ebay: #E53238;
+  --cs-myntra: #FF3F6C;
+  --cs-bg: #FAFAFC;
+  --cs-surface: #FFFFFF;
+  --cs-surface-raised: #FFFFFF;
+  --cs-border: #E4E4EE;
+  --cs-text: #16161F;
+  --cs-text-muted: #5C5C70;
+  --background: var(--cs-bg);
+  --foreground: var(--cs-text);
+  --card: var(--cs-surface);
+  --card-foreground: var(--cs-text);
+  --popover: var(--cs-surface-raised);
+  --popover-foreground: var(--cs-text);
+  --primary: var(--cs-primary-solid);
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F0F5;
+  --secondary-foreground: #262632;
+  --muted: #F0F0F5;
+  --muted-foreground: var(--cs-text-muted);
+  --accent: #F5F3EF;
+  --accent-foreground: #262632;
+  --destructive: var(--cs-error);
+  --border: var(--cs-border);
+  --input: var(--cs-border);
+  --ring: var(--cs-primary-solid);
+  --chart-1: var(--cs-amazon);
+  --chart-2: var(--cs-flipkart);
+  --chart-3: var(--cs-shopify);
+  --chart-4: var(--cs-ebay);
+  --chart-5: var(--cs-myntra);
+  --sidebar: var(--cs-surface);
+  --sidebar-foreground: var(--cs-text);
+  --sidebar-primary: var(--cs-primary-solid);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--secondary);
+  --sidebar-accent-foreground: #262632;
+  --sidebar-border: var(--cs-border);
+  --sidebar-ring: var(--cs-primary-solid);
 }
 
 .dark {
-  --background: oklch(0.18 0.01 250);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.22 0.012 250);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.22 0.012 250);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.696 0.17 162.48);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.27 0.015 250);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.27 0.015 250);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.3 0.04 162.48);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.696 0.17 162.48);
-  --chart-1: oklch(0.696 0.17 162.48);
-  --chart-2: oklch(0.769 0.188 70.08);
-  --chart-3: oklch(0.627 0.265 303.9);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.22 0.012 250);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.696 0.17 162.48);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.27 0.015 250);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.696 0.17 162.48);
+  --cs-primary-solid: #FF9900;
+  --cs-bg: #0A0A0F;
+  --cs-surface: #14141C;
+  --cs-surface-raised: #1C1C28;
+  --cs-border: #26263A;
+  --cs-text: #F4F4F8;
+  --cs-text-muted: #9A9AAD;
+  --background: var(--cs-bg);
+  --foreground: var(--cs-text);
+  --card: var(--cs-surface);
+  --card-foreground: var(--cs-text);
+  --popover: var(--cs-surface-raised);
+  --popover-foreground: var(--cs-text);
+  --primary: var(--cs-primary-solid);
+  --primary-foreground: #0A0A0F;
+  --secondary: var(--cs-surface-raised);
+  --secondary-foreground: var(--cs-text);
+  --muted: var(--cs-surface-raised);
+  --muted-foreground: var(--cs-text-muted);
+  --accent: #24222A;
+  --accent-foreground: var(--cs-text);
+  --destructive: var(--cs-error);
+  --border: var(--cs-border);
+  --input: var(--cs-border);
+  --ring: var(--cs-primary-solid);
+  --sidebar: var(--cs-surface);
+  --sidebar-foreground: var(--cs-text);
+  --sidebar-primary: var(--cs-primary-solid);
+  --sidebar-primary-foreground: #0A0A0F;
+  --sidebar-accent: var(--cs-surface-raised);
+  --sidebar-accent-foreground: var(--cs-text);
+  --sidebar-border: var(--cs-border);
+  --sidebar-ring: var(--cs-primary-solid);
 }
 
 @layer base {
@@ -130,10 +153,20 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 10% 0%, rgb(67 56 202 / 0.16), transparent 34rem),
-      radial-gradient(circle at 100% 100%, rgb(20 184 166 / 0.11), transparent 32rem);
+      radial-gradient(circle at 8% 0%, rgb(255 153 0 / 0.09), transparent 24rem),
+      radial-gradient(circle at 92% 4%, rgb(40 116 240 / 0.08), transparent 25rem),
+      radial-gradient(circle at 50% 100%, rgb(149 191 71 / 0.06), transparent 32rem);
     background-attachment: fixed;
     font-family: 'Trebuchet MS', var(--font-geist-sans), sans-serif;
+  }
+
+  .dark body {
+    background-image: radial-gradient(circle at 50% -10%, rgb(255 153 0 / 0.05), transparent 34rem);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cs-primary-solid);
+    outline-offset: 2px;
   }
 }
 
@@ -146,32 +179,212 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-.orbis-mark {
+.shopditto-shell {
   position: relative;
   isolation: isolate;
-  background: conic-gradient(from 180deg, #4338ca, #14b8a6, #4338ca);
-  box-shadow: 0 0 22px rgb(20 184 166 / 0.28);
 }
 
-.orbis-mark::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
+.shopditto-shell::before {
+  position: fixed;
+  inset: 4rem 0 auto;
   z-index: -1;
-  border-radius: inherit;
-  background: var(--background);
+  height: 1px;
+  content: '';
+  background: var(--cs-ring-gradient);
+  opacity: 0.34;
+  pointer-events: none;
 }
 
-.orbis-mark::before {
-  content: '';
+.shopditto-brand-panel {
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    var(--cs-ring-gradient) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 16px 40px -28px rgb(40 116 240 / 0.5);
+}
+
+.shopditto-spectrum-text {
+  background: var(--cs-ring-gradient);
+  background-size: 180% 180%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shopditto-spectrum-shift 8s ease-in-out infinite;
+}
+
+.shopditto-mark {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.shopditto-thinking {
+  animation: shopditto-thinking-spin 2.4s linear infinite;
+}
+
+.cs-ribbon-edge {
   position: absolute;
-  top: 3px;
-  right: 4px;
-  width: 5px;
-  height: 5px;
+  inset: 6px auto 6px 0;
+  width: 3px;
   border-radius: 999px;
-  background: white;
-  box-shadow: 0 0 8px white;
+  background: var(--cs-ring-gradient);
+  box-shadow: 0 0 10px rgb(255 153 0 / 0.25);
+}
+
+.cs-composer:focus-within {
+  border-color: transparent;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--cs-ring-gradient) border-box;
+}
+
+.cs-primary-button {
+  color: #17130d;
+  background: var(--cs-ring-gradient);
+  box-shadow: 0 4px 18px rgb(255 153 0 / 0.14);
+}
+
+.cs-primary-button:hover {
+  filter: brightness(1.08);
+}
+
+.shopditto-ribbon {
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 1.5px var(--ribbon-color)) drop-shadow(0 0 3px var(--ribbon-color));
+}
+
+.shopditto-orange { --ribbon-color: #FF9900; stroke: #FF9900; }
+.shopditto-blue { --ribbon-color: #2874F0; stroke: #2874F0; }
+.shopditto-green { --ribbon-color: #95BF47; stroke: #95BF47; }
+.shopditto-red { --ribbon-color: #E53238; stroke: #E53238; }
+.shopditto-pink { --ribbon-color: #FF3F6C; stroke: #FF3F6C; }
+
+.shopditto-sheen {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.52);
+  stroke-width: 0.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shopditto-particle {
+  fill: var(--ribbon-color);
+  filter: drop-shadow(0 0 2px var(--ribbon-color));
+  animation: shopditto-particle-glint 900ms ease-in-out infinite alternate;
+}
+
+.shopditto-flow {
+  opacity: 0;
+}
+
+.shopditto-flow .shopditto-ribbon {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.shopditto-knot {
+  opacity: 0;
+  transform-origin: 20px 20px;
+}
+
+.shopditto-ring {
+  opacity: 1;
+  transform: none;
+  transform-box: view-box;
+  transform-origin: center;
+}
+
+html[data-shopditto-intro='true'] .shopditto-intro-target .shopditto-flow {
+  animation: shopditto-flow-phase 7s ease-in-out forwards;
+}
+
+html[data-shopditto-intro='true'] .shopditto-intro-target .shopditto-flow .shopditto-ribbon {
+  animation: shopditto-ribbon-draw 7s cubic-bezier(0.22, 0.7, 0.25, 1) forwards;
+}
+
+html[data-shopditto-intro='true'] .shopditto-intro-target .shopditto-knot {
+  animation: shopditto-knot-phase 7s ease-in-out forwards;
+}
+
+html[data-shopditto-intro='true'] .shopditto-intro-target .shopditto-ring {
+  animation: shopditto-ring-form 7s cubic-bezier(0.2, 0.75, 0.25, 1) forwards;
+}
+
+@keyframes shopditto-ribbon-draw {
+  0%, 10% { stroke-dashoffset: 1; }
+  45%, 100% { stroke-dashoffset: 0; }
+}
+
+@keyframes shopditto-flow-phase {
+  0%, 6% { opacity: 0; }
+  12%, 28% { opacity: 1; }
+  40%, 100% { opacity: 0; }
+}
+
+@keyframes shopditto-knot-phase {
+  0%, 28% { opacity: 0; transform: scale(0.86) rotate(-8deg); }
+  34%, 62% { opacity: 1; transform: scale(1) rotate(0); }
+  78%, 100% { opacity: 0; transform: scale(0.92) rotate(8deg); }
+}
+
+@keyframes shopditto-ring-form {
+  0%, 62% { opacity: 0; transform: scale(0.72); }
+  90% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shopditto-particle-glint {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+@keyframes shopditto-thinking-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shopditto-spectrum-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .shopditto-flow,
+  .shopditto-knot {
+    display: none;
+  }
+
+  .shopditto-ring {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .shopditto-particle {
+    animation: none;
+  }
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-reduce-motion='true'] .shopditto-spectrum-text {
+  animation: none;
 }
 
 .orbis-signal {

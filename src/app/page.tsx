@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/shell/header'
 import { Sidebar, BottomNav } from '@/components/shell/sidebar'
-import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
+import { PersonalizedOnboardingWizard } from '@/components/onboarding/personalized-onboarding-wizard'
 import { CompareModal } from '@/components/compare/compare-modal'
 import { CompareTray } from '@/components/compare/compare-tray'
 import { ProductDetailModal } from '@/components/product/product-detail-modal'
@@ -49,6 +49,11 @@ export default function Home() {
         fetch('/api/chat/sessions').catch(() => null),
         fetch('/api/notifications').catch(() => null),
       ])
+      if (initRes.status === 401) {
+        window.location.replace('/login')
+        throw new Error('Authentication required')
+      }
+      if (!initRes.ok) throw new Error('Could not initialize your account.')
       const initData = await initRes.json()
       setUser(initData.user)
 
@@ -89,10 +94,10 @@ export default function Home() {
   const showOnboarding = booted && user && !user.hasOnboarded
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background">
+    <div className="shopditto-shell flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background/80">
       <Header />
 
-      <div className="flex flex-1 min-h-0">
+      <div className="mb-14 flex min-h-0 flex-1 md:mb-0">
         {!showOnboarding && <Sidebar />}
 
         <main className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -118,13 +123,13 @@ export default function Home() {
                   <SparklesIcon />
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Initializing AI Shopping OS…
+                  shopDitto is gathering intelligence…
                 </div>
               </div>
             </div>
           ) : showOnboarding ? (
             <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
-              <OnboardingWizard />
+              <PersonalizedOnboardingWizard />
             </div>
           ) : (
             <div
@@ -134,7 +139,7 @@ export default function Home() {
                   : 'overflow-y-auto scrollbar-thin pb-20 md:pb-6'
               }`}
             >
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="sync">
                 <motion.div
                   key={activeView}
                   initial={{ opacity: 0, y: 8 }}
@@ -144,7 +149,7 @@ export default function Home() {
                   className={
                     activeView === 'chat'
                       ? 'h-full min-h-0'
-                      : 'min-h-[calc(100vh-12rem)] h-full'
+                      : 'min-h-[calc(100vh-12rem)]'
                   }
                 >
                   {activeView === 'chat' && <ChatView />}
@@ -176,7 +181,7 @@ export default function Home() {
       >
         <span className="inline-flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          AI Shopping OS
+          shopDitto
         </span>
         <span className="text-border">·</span>
         <span className="hidden sm:inline">Cross-Platform Shopping Intelligence</span>

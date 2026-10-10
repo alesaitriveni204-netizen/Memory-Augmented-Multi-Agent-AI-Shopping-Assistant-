@@ -71,11 +71,17 @@ export interface DigitalTwin {
   preferredPlatforms: Platform[];
   riskTolerance: "low" | "medium" | "high";
   lifestyle: string;
+  budgetRange?: string;
+  purchasePriorities?: string[];
+  comparisonFrequencyLabel?: string;
+  shoppingFrequency?: string;
+  dealSeekingBehavior?: string;
 }
 
 export interface OnboardingData {
   categories: string[];
   budgetRange: string; // "low" | "mid" | "high" | "premium"
+  budgetRangeLabel?: string;
   brands: string[];
   platforms: Platform[];
   shoppingFrequency: string; // "rarely" | "monthly" | "weekly" | "daily"
@@ -83,6 +89,17 @@ export interface OnboardingData {
   deliverySpeed: number; // 1-5
   techFamiliarity: number; // 1-5
   lifestyle: string;
+  budgetStyle?: string;
+  brandImportance?: number;
+  technologyAdoption?: number;
+  tryNewBrands?: string;
+  purchasePriorities?: string[];
+  shoppingStyle?: string;
+  comparisonFrequency?: string;
+  aiHelp?: string[];
+  riskToleranceScore?: number;
+  personalizationConsent?: "full" | "controlled" | "minimal";
+  onboardingNotes?: string;
 }
 
 export interface ChatTurn {

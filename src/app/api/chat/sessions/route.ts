@@ -9,12 +9,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await getOrCreateDemoUser();
+    const since = new Date();
+    since.setDate(since.getDate() - 15);
     const messages = await db.chatMessage.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, createdAt: { gte: since } },
       orderBy: { createdAt: "asc" },
       select: { sessionId: true, role: true, content: true, createdAt: true },
     });
-    const groups = new Map<string, { title: string; messageCount: number; createdAt: Date; updatedAt: Date }>();
+    const groups = new Map<string, { title: string; searchText: string; messageCount: number; createdAt: Date; updatedAt: Date }>();
 
     for (const message of messages) {
       const id = message.sessionId || "legacy";
@@ -22,9 +24,11 @@ export async function GET() {
       if (existing) {
         existing.messageCount += 1;
         existing.updatedAt = message.createdAt;
+        existing.searchText += ` ${message.content}`;
       } else {
         groups.set(id, {
           title: message.role === "user" ? message.content : "Previous conversation",
+          searchText: message.content,
           messageCount: 1,
           createdAt: message.createdAt,
           updatedAt: message.createdAt,
