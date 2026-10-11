@@ -19,6 +19,7 @@ import { TimelineView } from '@/components/views/timeline-view'
 import { SalesView } from '@/components/views/sales-view'
 import { InsightsView } from '@/components/views/insights-view'
 import { SettingsView } from '@/components/views/settings-view'
+import { DashboardView } from '@/components/views/dashboard-view'
 import { useAppStore } from '@/lib/store'
 
 export default function Home() {
@@ -97,7 +98,7 @@ export default function Home() {
     <div className="shopditto-shell flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background/80">
       <Header />
 
-      <div className="mb-14 flex min-h-0 flex-1 md:mb-0">
+      <div className="mb-14 flex min-h-0 flex-1 lg:mb-0">
         {!showOnboarding && <Sidebar />}
 
         <main className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -136,7 +137,7 @@ export default function Home() {
               className={`flex-1 min-h-0 p-4 md:p-6 ${
                 activeView === 'chat'
                   ? 'overflow-hidden'
-                  : 'overflow-y-auto scrollbar-thin pb-20 md:pb-6'
+                  : 'overflow-y-auto scrollbar-thin pb-20 lg:pb-6'
               }`}
             >
               <AnimatePresence mode="sync">
@@ -152,6 +153,7 @@ export default function Home() {
                       : 'min-h-[calc(100vh-12rem)]'
                   }
                 >
+                  {activeView === 'home' && <DashboardView />}
                   {activeView === 'chat' && <ChatView />}
                   {activeView === 'discover' && <DiscoverView />}
                   {activeView === 'wishlist' && <WishlistView />}
@@ -183,10 +185,10 @@ export default function Home() {
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           shopDitto
         </span>
-        <span className="text-border">·</span>
+        <span className="text-muted-foreground/60">·</span>
         <span className="hidden sm:inline">Cross-Platform Shopping Intelligence</span>
         <span className="sm:hidden">Shopping Intelligence</span>
-        <span className="text-border">·</span>
+        <span className="text-muted-foreground/60">·</span>
         <span className={`font-medium ${user?.hasOnboarded ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
           {booted
             ? (user?.hasOnboarded ? 'Personalization Active' : 'Onboarding')

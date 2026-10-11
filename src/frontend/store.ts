@@ -4,6 +4,7 @@ import { create } from 'zustand'
 
 // ----- Local types (mirror of backend types) -----
 export type ViewKey =
+  | 'home'
   | 'chat'
   | 'discover'
   | 'wishlist'
@@ -200,7 +201,7 @@ export const useAppStore = create<AppState>((set) => ({
     user: null,
     booted: false,
     bootError: null,
-    activeView: 'chat',
+    activeView: 'home',
     chatMessages: [],
     activeChatSessionId: null,
     chatSessions: [],
@@ -218,7 +219,7 @@ export const useAppStore = create<AppState>((set) => ({
   updateUser: (patch) =>
     set((s) => (s.user ? { user: { ...s.user, ...patch } } : {})),
 
-  activeView: 'chat',
+  activeView: 'home',
   setActiveView: (activeView) => set({ activeView }),
 
   chatMessages: [],

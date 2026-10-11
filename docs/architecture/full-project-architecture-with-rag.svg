@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title description">
+  <title id="title">AI Shopping OS full project architecture with RAG</title>
+  <desc id="description">Full target architecture for the AI Shopping OS, from browser UI through Next.js APIs, authentication, shopping agent orchestration, parallel structured and semantic retrieval, MARE recommendations, grounded LLM responses, relational persistence, external providers, and background RAG ingestion into a persistent vector store.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#13233a"/>
+    </linearGradient>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#83cfff"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#86efac"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#fbbf24"/>
+    </marker>
+    <style>
+      text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #e5eefb; }
+      .title { font-size: 36px; font-weight: 750; }
+      .subtitle { font-size: 16px; fill: #a9bbd2; }
+      .section { font-size: 13px; font-weight: 750; letter-spacing: 1.5px; fill: #7dd3fc; }
+      .label { font-size: 17px; font-weight: 700; }
+      .text { font-size: 13px; fill: #c2d0e2; }
+      .small { font-size: 11px; fill: #a9bbd2; }
+      .tiny { font-size: 10px; fill: #a9bbd2; }
+      .box { fill: #14243a; stroke: #3b536f; stroke-width: 1.5; }
+      .blue { fill: #102d44; stroke: #38bdf8; stroke-width: 1.8; }
+      .purple { fill: #25213e; stroke: #a78bfa; stroke-width: 1.8; }
+      .green { fill: #133130; stroke: #4ade80; stroke-width: 1.8; }
+      .amber { fill: #342b1b; stroke: #fbbf24; stroke-width: 1.6; }
+      .soft { fill: #111d30; stroke: #31445e; stroke-width: 1.2; }
+      .flow { fill: none; stroke: #83cfff; stroke-width: 2; marker-end: url(#arrow); }
+      .ingest { fill: none; stroke: #86efac; stroke-width: 2; marker-end: url(#arrowGreen); }
+      .facts { fill: none; stroke: #fbbf24; stroke-width: 2; marker-end: url(#arrowAmber); }
+      .dashed { stroke-dasharray: 8 7; }
+      .divider { stroke: #344960; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1320" fill="url(#background)"/>
+  <circle cx="1650" cy="95" r="260" fill="#6366f1" opacity=".055"/>
+  <circle cx="90" cy="1170" r="310" fill="#06b6d4" opacity=".04"/>
+
+  <text x="58" y="62" class="title">AI Shopping OS · Full Project Architecture with RAG</text>
+  <text x="60" y="92" class="subtitle">End-to-end view: shopper experience, agent orchestration, hybrid retrieval, persistence, integrations, and indexing</text>
+
+  <rect x="58" y="112" width="1684" height="42" rx="10" class="amber"/>
+  <text x="78" y="139" class="text">
+    Target architecture: RAG is currently a prototype (in-memory vectors, rebuilt per query, not integrated into chat); persistent indexing and chat grounding are recommended next steps.
+  </text>
+
+  <!-- Client and presentation layer -->
+  <text x="58" y="188" class="section">1 · CLIENT / PRESENTATION</text>
+  <rect x="58" y="205" width="255" height="166" rx="14" class="box"/>
+  <text x="80" y="237" class="label">Shopper</text>
+  <text x="80" y="264" class="text">Browser · desktop / mobile</text>
+  <text x="80" y="289" class="small">Shopping requests and feedback</text>
+  <text x="80" y="319" class="small">No direct LLM or vector-store access</text>
+  <text x="80" y="347" class="small">Receives recommendations + sources</text>
+
+  <rect x="354" y="205" width="405" height="166" rx="14" class="blue"/>
+  <text x="378" y="237" class="label">Next.js / React application</text>
+  <text x="378" y="265" class="text">App Router pages · Tailwind · Radix UI</text>
+  <text x="378" y="293" class="small">Chat · Discover · Compare · Wishlist · Memory</text>
+  <text x="378" y="318" class="small">Digital Twin · Coach · Insights · Timeline · Settings</text>
+  <text x="378" y="347" class="small">Zustand state · client calls same-origin APIs</text>
+  <path d="M313 287 H344" class="flow"/>
+
+  <rect x="802" y="205" width="414" height="166" rx="14" class="blue"/>
+  <text x="826" y="237" class="label">Next.js API / security boundary</text>
+  <text x="826" y="265" class="text">Auth · onboarding · validation · session scope</text>
+  <text x="826" y="293" class="small">Chat · products · compare · recommendations</text>
+  <text x="826" y="318" class="small">Memory · twin · wishlist · insights · timeline</text>
+  <text x="826" y="347" class="small">RAG query / health · image / web / ASR APIs</text>
+  <path d="M759 287 H792" class="flow"/>
+
+  <rect x="1260" y="205" width="482" height="166" rx="14" class="purple"/>
+  <text x="1284" y="237" class="label">Shopping request orchestration</text>
+  <text x="1284" y="265" class="text">Conversation context → intent extraction → AHDE plan</text>
+  <text x="1284" y="293" class="small">Resolve references, category, brand, constraints, complexity</text>
+  <text x="1284" y="318" class="small">Choose agents / model tier; skip needless retrieval</text>
+  <text x="1284" y="347" class="small">Implementation home: src/backend/agents.ts + chat route</text>
+  <path d="M1216 287 H1250" class="flow"/>
+
+  <!-- Main request processing -->
+  <text x="58" y="419" class="section">2 · BUSINESS LOGIC + HYBRID RETRIEVAL</text>
+
+  <rect x="58" y="441" width="325" height="237" rx="14" class="purple"/>
+  <text x="82" y="475" class="label">Specialist agents</text>
+  <text x="82" y="507" class="text">Intent + conversation context</text>
+  <text x="82" y="534" class="text">Search + candidate preparation</text>
+  <text x="82" y="561" class="text">Memory + Digital Twin</text>
+  <text x="82" y="588" class="text">Budget + Price + Review</text>
+  <text x="82" y="615" class="text">Recommendation + Explainability</text>
+  <text x="82" y="650" class="small">AHDE selects agents for each request</text>
+  <path d="M1490 371 V405 H220 V431" class="flow"/>
+
+  <rect x="428" y="441" width="392" height="237" rx="14" class="box"/>
+  <text x="452" y="475" class="label">Structured product truth</text>
+  <text x="452" y="507" class="text">Prisma query with exact filters</text>
+  <text x="452" y="534" class="small">Category · explicit product type · budget</text>
+  <text x="452" y="559" class="small">Brand · attributes · platform / availability</text>
+  <text x="452" y="584" class="small">Live price · stock · delivery · price history</text>
+  <text x="452" y="621" class="text">Treat changing facts as authoritative</text>
+  <text x="452" y="650" class="small">Not approximated by vector similarity</text>
+  <path d="M220 678 V699 H620 V688" class="facts"/>
+
+  <rect x="859" y="441" width="392" height="237" rx="14" class="green"/>
+  <text x="883" y="475" class="label">RAG semantic retrieval</text>
+  <text x="883" y="507" class="text">Query embedding → persistent vector index</text>
+  <text x="883" y="534" class="small">Product descriptions · specs · pros / cons</text>
+  <text x="883" y="559" class="small">Approved review summaries / knowledge</text>
+  <text x="883" y="584" class="small">Metadata filters · Top-K · dedupe by product</text>
+  <text x="883" y="621" class="text">Return evidence + IDs + relevance</text>
+  <text x="883" y="650" class="small">No answer generation by retrieval alone</text>
+  <path d="M220 678 V710 H1055 V688" class="ingest"/>
+
+  <rect x="1290" y="441" width="452" height="237" rx="14" class="box"/>
+  <text x="1314" y="475" class="label">Personalization context</text>
+  <text x="1314" y="507" class="text">Authenticated user’s own memories</text>
+  <text x="1314" y="534" class="small">Digital Twin · stated preferences · history</text>
+  <text x="1314" y="559" class="small">User scope enforced server-side</text>
+  <text x="1314" y="584" class="small">Never mix private memory into shared index</text>
+  <text x="1314" y="621" class="text">Personalize ranking, not factual prices</text>
+  <text x="1314" y="650" class="small">Respect memory / personalization settings</text>
+  <path d="M220 678 V724 H1516 V688" class="flow"/>
+
+  <rect x="448" y="733" width="500" height="130" rx="14" class="purple"/>
+  <text x="472" y="770" class="label">Candidate fusion + MARE ranking</text>
+  <text x="472" y="800" class="text">Merge structured candidates and semantic product IDs</text>
+  <text x="472" y="827" class="small">Apply hard constraints → score fit, price, review, twin, memory, availability</text>
+  <path d="M620 678 V713 H698 V723" class="facts"/>
+  <path d="M1055 678 V703 H824 V723" class="ingest"/>
+  <path d="M1516 678 V713 H900 V723" class="flow"/>
+
+  <rect x="1010" y="733" width="480" height="130" rx="14" class="blue"/>
+  <text x="1034" y="770" class="label">Grounded explanation / response</text>
+  <text x="1034" y="800" class="text">LLM sees ranked products + bounded retrieved evidence</text>
+  <text x="1034" y="827" class="small">State supported facts, explain fit, attach product/source IDs</text>
+  <path d="M948 798 H1000" class="flow"/>
+
+  <!-- persistence and external systems -->
+  <text x="58" y="917" class="section">3 · PERSISTENCE, PROVIDERS, AND OPERATIONS</text>
+
+  <rect x="58" y="939" width="520" height="194" rx="14" class="box-blue"/>
+  <text x="82" y="974" class="label">Relational application database</text>
+  <text x="82" y="1004" class="text">Prisma ORM → SQLite today (Postgres is a scale-up option)</text>
+  <text x="82" y="1034" class="small">Users / auth · onboarding · memories · digital twin</text>
+  <text x="82" y="1059" class="small">Products · platform prices · price history · wishlist</text>
+  <text x="82" y="1084" class="small">Chat · recommendations · timeline · notifications</text>
+  <text x="82" y="1110" class="small">Source of truth for transactional and current structured data</text>
+
+  <rect x="625" y="939" width="520" height="194" rx="14" class="green"/>
+  <text x="649" y="974" class="label">Persistent vector index · recommended target</text>
+  <text x="649" y="1004" class="text">Chroma / pgvector / equivalent behind VectorStore interface</text>
+  <text x="649" y="1034" class="small">Vector + chunk text + source / product IDs + metadata</text>
+  <text x="649" y="1059" class="small">Product / category filters; no private user memory by default</text>
+  <text x="649" y="1084" class="small">Incremental upsert / delete · content hash · index version</text>
+  <text x="649" y="1110" class="small">Current repository implementation is in-memory, not persistent</text>
+
+  <rect x="1192" y="939" width="550" height="194" rx="14" class="box"/>
+  <text x="1216" y="974" class="label">External services / data providers</text>
+  <text x="1216" y="1004" class="text">LLM: z-ai-web-dev-sdk (server-side only)</text>
+  <text x="1216" y="1034" class="small">Embedding model provider (semantic vectors; batch at ingest)</text>
+  <text x="1216" y="1059" class="small">Marketplace/catalog providers · web / image search · ASR</text>
+  <text x="1216" y="1084" class="small">Mocks / seeded catalog may be used in local demo</text>
+  <text x="1216" y="1110" class="small">External calls need timeouts, limits, error visibility, and caching</text>
+
+  <path d="M1248 863 V904 H318 V929" class="flow"/>
+  <path d="M1270 863 V918 H1467 V929" class="flow"/>
+  <path d="M555 678 V901 H318 V929" class="facts"/>
+  <path d="M1055 678 V929" class="ingest"/>
+  <path d="M1120 678 V900 H1467 V929" class="flow"/>
+  <path d="M1290 678 V893 H500 V929" class="flow"/>
+
+  <!-- Background ingestion -->
+  <line x1="58" y1="1166" x2="1742" y2="1166" class="divider"/>
+  <text x="58" y="1197" class="section">4 · BACKGROUND / OFFLINE RAG INDEXING · OUTSIDE THE REQUEST PATH</text>
+
+  <rect x="58" y="1215" width="280" height="78" rx="12" class="box"/>
+  <text x="78" y="1245" class="label">Catalog + approved knowledge</text>
+  <text x="78" y="1272" class="small">Products, specs, review summaries</text>
+
+  <rect x="390" y="1215" width="280" height="78" rx="12" class="blue"/>
+  <text x="410" y="1245" class="label">Normalize + change detect</text>
+  <text x="410" y="1272" class="small">Stable document ID · content hash</text>
+
+  <rect x="722" y="1215" width="280" height="78" rx="12" class="purple"/>
+  <text x="742" y="1245" class="label">Chunk + batch embed</text>
+  <text x="742" y="1272" class="small">Re-embed only changed documents</text>
+
+  <rect x="1054" y="1215" width="280" height="78" rx="12" class="green"/>
+  <text x="1074" y="1245" class="label">Upsert / delete index</text>
+  <text x="1074" y="1272" class="small">Persistent vectors + metadata</text>
+
+  <rect x="1386" y="1215" width="356" height="78" rx="12" class="box"/>
+  <text x="1406" y="1245" class="label">Monitor + rebuild controls</text>
+  <text x="1406" y="1272" class="small">Health · counts · latency · relevance · rollback</text>
+
+  <path d="M338 1254 H380" class="ingest"/>
+  <path d="M670 1254 H712" class="ingest"/>
+  <path d="M1002 1254 H1044" class="ingest"/>
+  <path d="M1334 1254 H1376" class="ingest"/>
+  <path d="M1194 1215 V1150 H886 V688" class="ingest dashed"/>
+
+  <text x="58" y="1308" class="tiny">Design rule: Prisma owns live facts · RAG retrieves relevant text · MARE ranks candidates · the LLM explains only what the data supports.</text>
+</svg>

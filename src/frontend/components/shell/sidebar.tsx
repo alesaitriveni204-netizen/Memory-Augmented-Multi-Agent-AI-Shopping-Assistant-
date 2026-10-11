@@ -12,6 +12,7 @@ import {
   CalendarDays,
   GitCompare,
   MoreHorizontal,
+  House,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -25,6 +26,7 @@ const PRIMARY_ITEMS: {
   label: string
   icon: React.ComponentType<{ className?: string }>
 }[] = [
+  { key: 'home', label: 'Home', icon: House },
   { key: 'chat', label: 'Chat', icon: MessageSquare },
   { key: 'discover', label: 'Discover', icon: Compass },
   { key: 'wishlist', label: 'Wishlist', icon: Heart },
@@ -77,7 +79,7 @@ export function Sidebar() {
     <nav
       aria-label="Primary"
       className={cn(
-        'hidden shrink-0 flex-col gap-1 overflow-y-auto scrollbar-thin border-r border-sidebar-border bg-sidebar/80 p-3 transition-[width] duration-200 md:flex',
+        'my-3 ml-3 hidden shrink-0 flex-col gap-1 overflow-y-auto scrollbar-thin rounded-3xl border border-sidebar-border bg-sidebar/75 p-3 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-[width] duration-200 lg:flex',
         collapsed ? 'w-16' : 'w-60',
       )}
     >
@@ -111,7 +113,7 @@ export function Sidebar() {
         )}
       </div>
       {!collapsed && <div className="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase text-muted-foreground">Shop</div>}
-      {PRIMARY_ITEMS.slice(0, 2).map(renderItem)}
+      {PRIMARY_ITEMS.slice(0, 3).map(renderItem)}
       <button
         onClick={() => setCompareOpen(true)}
         aria-current={compareOpen ? 'page' : undefined}
@@ -122,7 +124,7 @@ export function Sidebar() {
         <GitCompare className={cn('h-[18px] w-[18px] shrink-0', compareOpen && 'text-cs-primary-solid')} />
         {!collapsed && <span>Compare</span>}
       </button>
-      {PRIMARY_ITEMS.slice(2).map(renderItem)}
+      {PRIMARY_ITEMS.slice(3).map(renderItem)}
       {!collapsed && <div className="mt-4 px-2 pb-2 pt-1 text-[10px] font-semibold uppercase text-muted-foreground">Intelligence</div>}
       {SECONDARY_ITEMS.map(renderItem)}
       <div className={cn('mt-auto border-t border-border/60 pt-3', collapsed && 'flex flex-col items-center')}>
@@ -153,17 +155,17 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Primary mobile"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="mx-auto flex max-w-xl items-stretch">
-          {PRIMARY_ITEMS.slice(0, 2).map((item) => {
+          {PRIMARY_ITEMS.slice(0, 3).map((item) => {
             const Icon = item.icon
             const active = activeView === item.key
             return <button key={item.key} onClick={() => setActiveView(item.key)} aria-current={active ? 'page' : undefined} className={cn('relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[10px]', active ? 'text-foreground' : 'text-muted-foreground')}><Icon className="h-5 w-5" /><span>{item.label}</span>{active && <ShopDittoMark className="absolute bottom-1 h-2.5 w-2.5" />}</button>
           })}
           <button onClick={() => setCompareOpen(true)} aria-current={compareOpen ? 'page' : undefined} className={cn('relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[10px]', compareOpen ? 'text-foreground' : 'text-muted-foreground')}><GitCompare className="h-5 w-5" /><span>Compare</span>{compareOpen && <ShopDittoMark className="absolute bottom-1 h-2.5 w-2.5" />}</button>
-          {PRIMARY_ITEMS.slice(2, 4).map((item) => {
+          {PRIMARY_ITEMS.slice(3, 4).map((item) => {
             const Icon = item.icon
             const active = activeView === item.key
             return <button key={item.key} onClick={() => setActiveView(item.key)} aria-current={active ? 'page' : undefined} className={cn('relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[10px]', active ? 'text-foreground' : 'text-muted-foreground')}><Icon className="h-5 w-5" /><span>{item.label}</span>{active && <ShopDittoMark className="absolute bottom-1 h-2.5 w-2.5" />}</button>
@@ -171,7 +173,7 @@ export function BottomNav() {
           <button onClick={() => setMoreOpen(true)} aria-expanded={moreOpen} className="flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[10px] text-muted-foreground"><MoreHorizontal className="h-5 w-5" /><span>More</span></button>
         </div>
       </nav>
-      {moreOpen && <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="More navigation">
+      {moreOpen && <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More navigation">
         <button className="absolute inset-0 bg-black/50" aria-label="Close navigation" onClick={() => setMoreOpen(false)} />
         <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border border-border bg-card p-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] shadow-2xl">
           <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">More</h2><button className="grid h-10 w-10 place-items-center rounded-md hover:bg-muted" aria-label="Close navigation" onClick={() => setMoreOpen(false)}><X className="h-5 w-5" /></button></div>
