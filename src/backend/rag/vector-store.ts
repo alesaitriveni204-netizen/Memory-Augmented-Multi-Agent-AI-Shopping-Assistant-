@@ -54,10 +54,43 @@ function tokenToDimension(token: string): number {
   return SIGNAL_TERMS.length + (hash % (256 - SIGNAL_TERMS.length));
 }
 
-export class InMemoryVectorStore implements VectorStore {
-  private chunks: (RagChunk & { vector: number[] })[] = [];
+import fs from "node:fs";
+import path from "node:path";
 
-  async upsert(documents: RagChunk[]): Promise<void> {
+export class PersistentVectorStore implements VectorStore {
+  private chunks: (RagChunk & { vector: number[]; contentHash?: string })[] = [];
+  private filePath: string;
+
+  constructor(filePath?: string) {
+    this.filePath = filePath || path.join(process.cwd(), "db", "vector_store.json");
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk() {
+    try {
+      if (fs.existsSync(this.filePath)) {
+        const raw = fs.readFileSync(this.filePath, "utf-8");
+        this.chunks = JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("[RAG VectorStore] Warning: Could not read vector store file:", e);
+      this.chunks = [];
+    }
+  }
+
+  private saveToDisk() {
+    try {
+      const dir = path.dirname(this.filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.filePath, JSON.stringify(this.chunks, null, 2), "utf-8");
+    } catch (e) {
+      console.error("[RAG VectorStore] Error saving vector store file:", e);
+    }
+  }
+
+  async upsert(documents: (RagChunk & { contentHash?: string })[]): Promise<void> {
     for (const doc of documents) {
       const vector = doc.vector ?? simpleVectorFromText(doc.content);
       const existingIndex = this.chunks.findIndex((item) => {
@@ -72,6 +105,7 @@ export class InMemoryVectorStore implements VectorStore {
         this.chunks.push({ ...doc, vector });
       }
     }
+    this.saveToDisk();
   }
 
   async search(embedding: number[], options?: { limit?: number; userId?: string; sourceType?: RagSourceType }): Promise<RagSearchHit[]> {
@@ -105,15 +139,31 @@ export class InMemoryVectorStore implements VectorStore {
 
   async delete(ids: string[]): Promise<void> {
     this.chunks = this.chunks.filter((chunk) => !ids.includes(chunk.id) && !ids.includes(chunk.chunkId));
+    this.saveToDisk();
   }
 
   async count(): Promise<number> {
     return this.chunks.length;
   }
+
+  getAllChunks() {
+    return this.chunks;
+  }
+}
+
+export class InMemoryVectorStore extends PersistentVectorStore {}
+
+let globalVectorStore: PersistentVectorStore | null = null;
+
+export function getPersistentVectorStore(): PersistentVectorStore {
+  if (!globalVectorStore) {
+    globalVectorStore = new PersistentVectorStore();
+  }
+  return globalVectorStore;
 }
 
 export function createInMemoryVectorStore(): VectorStore {
-  return new InMemoryVectorStore();
+  return getPersistentVectorStore();
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
