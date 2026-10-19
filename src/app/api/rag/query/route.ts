@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrCreateDemoUser } from "@/lib/session";
-import { createRagQuery, retrieveProductKnowledge } from "@/lib/rag";
+import { createRagQuery, createEmbeddingProvider, createInMemoryVectorStore } from "@/lib/rag";
+import { db } from "@/lib/db";
+import { buildRagDocuments, chunkText } from "@/lib/rag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +34,32 @@ export async function POST(req: Request) {
       topK: parsed.data.topK ?? 8,
     });
 
-    const results = await retrieveProductKnowledge(ragQuery);
+    const products = await db.product.findMany({
+      where: ragQuery.category ? { category: ragQuery.category } : undefined,
+      include: { platformPrices: true },
+      orderBy: { rating: "desc" },
+      take: 20,
+    });
+    const docs = buildRagDocuments(products as any[]);
+    const chunks: any[] = [];
+    for (const doc of docs) {
+      const generated = chunkText(doc.content, {
+        chunkSize: 700,
+        overlap: 100,
+        sourceType: doc.sourceType,
+        documentType: doc.documentType,
+        metadata: { ...doc.metadata, productId: doc.productId, userId: doc.userId },
+      });
+      chunks.push(...generated);
+    }
+
+    const provider = createEmbeddingProvider();
+    const store = createInMemoryVectorStore();
+    const embeddings = await provider.embedTexts(chunks.map((chunk) => chunk.content));
+    await store.upsert(chunks.map((chunk, index) => ({ ...chunk, vector: embeddings[index] })));
+
+    const queryEmbedding = await provider.embedText(ragQuery.query);
+    const results = await store.search(queryEmbedding, { limit: ragQuery.topK ?? 5, sourceType: "product" });
 
     const answer = results.length > 0
       ? `I found ${results.length} relevant product references for "${ragQuery.query}". The strongest matches include ${results.slice(0, 3).map((hit) => hit.metadata.brand || "product").join(", ")}.`

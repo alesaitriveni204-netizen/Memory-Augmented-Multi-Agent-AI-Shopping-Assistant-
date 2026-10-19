@@ -17,7 +17,6 @@ import {
   updateMemoryFromInteraction,
   evolveTwinFromInteraction,
 } from "@/lib/agents";
-import { retrieveProductKnowledge, createRagQuery } from "@/lib/rag";
 import type { RecommendationResult, AhdePlan, IntentResult, DigitalTwin } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -70,25 +69,8 @@ export async function POST(req: Request) {
       : [];
 
     let products: any[] = [];
-    let ragHits: any[] = [];
     if (plan.requiredAgents.includes("search")) {
-      const [sqlProducts, fetchedRagHits] = await Promise.all([
-        searchAgent(intent),
-        retrieveProductKnowledge(
-          createRagQuery({
-            userId: user.id,
-            query: resolvedMessage,
-            category: intent.category,
-            brand: intent.brands?.[0],
-            topK: 5,
-          })
-        ).catch((e) => {
-          console.warn("[chat] RAG retrieval error:", e);
-          return [];
-        }),
-      ]);
-      products = sqlProducts;
-      ragHits = fetchedRagHits;
+      products = await searchAgent(intent);
     }
 
     let budgetResult: { budget: number | null; advice: string } | null = null;
@@ -110,7 +92,11 @@ export async function POST(req: Request) {
             const advice = await priceAgent(rec.productId, rec.bestPrice);
             (rec as any).priceAdvice = advice;
           } catch (e) {
-            console.error("[chat] priceAgent failed for", rec.productId, e);
+            console.log(
+              "[chat] priceAgent failed for",
+              rec.productId,
+              e instanceof Error ? e.message : String(e)
+            );
           }
         })
       );
@@ -144,14 +130,6 @@ export async function POST(req: Request) {
       agentsUsed: plan.requiredAgents,
       ahdePlan: plan,
       recommendations: recs,
-      ragHitsCount: ragHits.length,
-      ragSources: ragHits.map((hit) => ({
-        id: hit.id,
-        sourceType: hit.sourceType,
-        documentType: hit.documentType,
-        score: Number(hit.score.toFixed(3)),
-        productId: hit.productId,
-      })),
       latencyMs,
       budget: budgetResult?.budget ?? null,
     };
@@ -202,12 +180,18 @@ export async function POST(req: Request) {
     // 9. Async memory + twin evolution (do NOT await)
     if (user.memoryEnabled) {
       updateMemoryFromInteraction(user.id, message, intent).catch((e) =>
-        console.error("[chat] updateMemoryFromInteraction error:", e)
+        console.log(
+          "[chat] updateMemoryFromInteraction error:",
+          e instanceof Error ? e.message : String(e)
+        )
       );
     }
     if (user.personalizationEnabled && twin) {
       evolveTwinFromInteraction(user.id, intent, twin).catch((e) =>
-        console.error("[chat] evolveTwinFromInteraction error:", e)
+        console.log(
+          "[chat] evolveTwinFromInteraction error:",
+          e instanceof Error ? e.message : String(e)
+        )
       );
     }
 
@@ -227,7 +211,13 @@ export async function POST(req: Request) {
       resolvedMessage,
     });
   } catch (err: any) {
-    console.error("[api/chat] error:", err);
+    if (err?.message === "UNAUTHENTICATED") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    console.log(
+      "[api/chat] error:",
+      err instanceof Error ? err.message : String(err)
+    );
     return NextResponse.json(
       { error: "Failed to process chat", detail: err?.message ?? String(err) },
       { status: 500 }

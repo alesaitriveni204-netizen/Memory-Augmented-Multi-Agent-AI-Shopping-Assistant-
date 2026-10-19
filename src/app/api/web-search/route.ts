@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ results: [], query, rateLimited: true });
       }
       // For other errors, also return empty instead of 500
-      console.error("[api/web-search] invoke error:", msg);
+      console.log("[api/web-search] invoke error:", msg);
       return NextResponse.json({ results: [], query, error: msg });
     }
 
@@ -72,7 +72,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ results: clean, query });
   } catch (err: any) {
-    console.error("[api/web-search] error:", err);
+    console.log(
+      "[api/web-search] error:",
+      err instanceof Error ? err.message : String(err)
+    );
     // Return empty results instead of 500 to prevent frontend crashes
     return NextResponse.json({ results: [], error: err?.message ?? String(err) });
   }
