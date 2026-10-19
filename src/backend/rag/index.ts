@@ -3,18 +3,16 @@ export * from "./config.ts";
 export * from "./document.ts";
 export * from "./embeddings.ts";
 export * from "./vector-store.ts";
-export * from "./indexer.ts";
-export * from "./retriever.ts";
 
 import { MemoryEmbeddingProvider } from "./embeddings.ts";
-import { getPersistentVectorStore } from "./vector-store.ts";
+import { InMemoryVectorStore } from "./vector-store.ts";
 
 export function createMemoryEmbeddingProvider() {
   return new MemoryEmbeddingProvider();
 }
 
-export function createInMemoryVectorStore() {
-  return getPersistentVectorStore();
+export function createInMemoryVectorStore(provider?: any) {
+  return new InMemoryVectorStore(provider);
 }
 
 export function createRagQuery(input: {

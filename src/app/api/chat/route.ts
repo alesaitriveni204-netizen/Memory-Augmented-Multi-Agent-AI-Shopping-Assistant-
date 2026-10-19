@@ -17,7 +17,6 @@ import {
   updateMemoryFromInteraction,
   evolveTwinFromInteraction,
 } from "@/lib/agents";
-import { retrieveProductKnowledge, createRagQuery } from "@/lib/rag";
 import type { RecommendationResult, AhdePlan, IntentResult, DigitalTwin } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -70,25 +69,8 @@ export async function POST(req: Request) {
       : [];
 
     let products: any[] = [];
-    let ragHits: any[] = [];
     if (plan.requiredAgents.includes("search")) {
-      const [sqlProducts, fetchedRagHits] = await Promise.all([
-        searchAgent(intent),
-        retrieveProductKnowledge(
-          createRagQuery({
-            userId: user.id,
-            query: resolvedMessage,
-            category: intent.category,
-            brand: intent.brands?.[0],
-            topK: 5,
-          })
-        ).catch((e) => {
-          console.warn("[chat] RAG retrieval error:", e);
-          return [];
-        }),
-      ]);
-      products = sqlProducts;
-      ragHits = fetchedRagHits;
+      products = await searchAgent(intent);
     }
 
     let budgetResult: { budget: number | null; advice: string } | null = null;
@@ -144,14 +126,6 @@ export async function POST(req: Request) {
       agentsUsed: plan.requiredAgents,
       ahdePlan: plan,
       recommendations: recs,
-      ragHitsCount: ragHits.length,
-      ragSources: ragHits.map((hit) => ({
-        id: hit.id,
-        sourceType: hit.sourceType,
-        documentType: hit.documentType,
-        score: Number(hit.score.toFixed(3)),
-        productId: hit.productId,
-      })),
       latencyMs,
       budget: budgetResult?.budget ?? null,
     };

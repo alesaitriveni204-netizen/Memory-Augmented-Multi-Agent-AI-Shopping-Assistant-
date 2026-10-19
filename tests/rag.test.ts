@@ -7,7 +7,6 @@ import {
   createMemoryEmbeddingProvider,
   createInMemoryVectorStore,
   createRagQuery,
-  PersistentVectorStore,
 } from '../src/backend/rag/index.ts';
 
 test('buildRagDocuments converts product data into semantic chunks', async () => {
@@ -56,7 +55,7 @@ test('chunkText produces deterministic chunks with metadata', () => {
 
 test('in-memory vector search returns relevant document', async () => {
   const provider = createMemoryEmbeddingProvider();
-  const store = createInMemoryVectorStore();
+  const store = createInMemoryVectorStore(provider);
 
   const docs = [
     {
@@ -100,22 +99,4 @@ test('createRagQuery normalizes user request fields', () => {
   assert.equal(query.category, 'phone');
   assert.equal(query.brand, 'Samsung');
   assert.equal(query.topK, 4);
-});
-
-test('PersistentVectorStore supports disk persistence and counting', async () => {
-  const store = new PersistentVectorStore('./scratch/test_vector_store.json');
-  await store.upsert([
-    {
-      id: 'test-doc-1',
-      chunkId: 'test-doc-1',
-      chunkIndex: 0,
-      content: 'Persistent vector chunk test content',
-      sourceType: 'product',
-      documentType: 'product_overview',
-      metadata: { brand: 'TestBrand' },
-    },
-  ]);
-
-  const count = await store.count();
-  assert.ok(count >= 1);
 });
