@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Next.js dev server (Webpack)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev",
+				"--",
+				"--webpack"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

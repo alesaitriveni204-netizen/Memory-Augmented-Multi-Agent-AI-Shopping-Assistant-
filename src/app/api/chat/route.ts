@@ -92,7 +92,11 @@ export async function POST(req: Request) {
             const advice = await priceAgent(rec.productId, rec.bestPrice);
             (rec as any).priceAdvice = advice;
           } catch (e) {
-            console.error("[chat] priceAgent failed for", rec.productId, e);
+            console.log(
+              "[chat] priceAgent failed for",
+              rec.productId,
+              e instanceof Error ? e.message : String(e)
+            );
           }
         })
       );
@@ -176,12 +180,18 @@ export async function POST(req: Request) {
     // 9. Async memory + twin evolution (do NOT await)
     if (user.memoryEnabled) {
       updateMemoryFromInteraction(user.id, message, intent).catch((e) =>
-        console.error("[chat] updateMemoryFromInteraction error:", e)
+        console.log(
+          "[chat] updateMemoryFromInteraction error:",
+          e instanceof Error ? e.message : String(e)
+        )
       );
     }
     if (user.personalizationEnabled && twin) {
       evolveTwinFromInteraction(user.id, intent, twin).catch((e) =>
-        console.error("[chat] evolveTwinFromInteraction error:", e)
+        console.log(
+          "[chat] evolveTwinFromInteraction error:",
+          e instanceof Error ? e.message : String(e)
+        )
       );
     }
 
@@ -201,7 +211,13 @@ export async function POST(req: Request) {
       resolvedMessage,
     });
   } catch (err: any) {
-    console.error("[api/chat] error:", err);
+    if (err?.message === "UNAUTHENTICATED") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    console.log(
+      "[api/chat] error:",
+      err instanceof Error ? err.message : String(err)
+    );
     return NextResponse.json(
       { error: "Failed to process chat", detail: err?.message ?? String(err) },
       { status: 500 }

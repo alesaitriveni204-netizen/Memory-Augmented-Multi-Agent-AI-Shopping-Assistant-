@@ -36,7 +36,10 @@ export async function llmChat(
     } as any);
     return completion.choices[0]?.message?.content ?? "";
   } catch (err) {
-    console.error("[LLM] chat error:", err);
+    console.log(
+      "[LLM] chat error:",
+      err instanceof Error ? err.message : String(err)
+    );
     return "";
   }
 }
@@ -70,7 +73,12 @@ export async function llmJson<T = any>(
   try {
     return JSON.parse(cleaned) as T;
   } catch (err) {
-    console.error("[LLM] JSON parse error:", err, "\nRaw:", raw);
+    console.log(
+      "[LLM] JSON parse error:",
+      err instanceof Error ? err.message : String(err),
+      "\nRaw:",
+      raw
+    );
     return null;
   }
 }

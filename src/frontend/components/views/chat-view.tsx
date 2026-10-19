@@ -168,7 +168,7 @@ export function ChatView() {
         if (data?.error === 'not_onboarded') {
           toast.error('Please complete onboarding first')
         } else {
-          toast.error(data?.error || 'Chat failed')
+          toast.error(data?.detail || data?.error || 'Chat failed')
         }
       } else {
         if (data.sessionId && data.sessionId !== activeChatSessionId) {
