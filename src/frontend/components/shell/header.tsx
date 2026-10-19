@@ -105,8 +105,8 @@ export function Header() {
             askOrbis()
           }}
         >
-          <div className="orbis-glass flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-xs text-muted-foreground transition-colors focus-within:border-cyan-400/60">
-            <Search className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+          <div className="orbis-glass flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-xs text-muted-foreground transition-colors focus-within:border-teal-400/60">
+            <Search className="h-3.5 w-3.5 shrink-0 text-teal-500" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -123,7 +123,7 @@ export function Header() {
             <button
               type="submit"
               aria-label="Send question to shopDitto"
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-cyan-400 transition-colors hover:bg-cyan-400/10"
+              className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-teal-500 transition-colors hover:bg-teal-500/10"
             >
               <Sparkles className="h-3.5 w-3.5" />
             </button>
@@ -182,7 +182,7 @@ export function Header() {
                 )}
               </div>
 
-              <ScrollArea className="max-h-[min(600px,calc(100dvh-100px))]">
+              <ScrollArea className="max-h-[min(72vh,560px)]">
                 <div className="flex flex-col">
                   {visibleNotifications.length === 0 && (
                     <div className="px-4 py-10 text-center text-xs text-muted-foreground">

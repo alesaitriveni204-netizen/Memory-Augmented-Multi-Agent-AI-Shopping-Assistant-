@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../node_modules/.prisma-shopditto/index.js'
+import { PrismaClient } from '../../node_modules/.prisma-shopditto'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
